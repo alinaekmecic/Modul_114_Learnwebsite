@@ -1,0 +1,1813 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zahlensysteme — Es kommt auf die Stelle an</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Source+Sans+3:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EAE6D9;
+    --paper-grid: rgba(53,96,122,0.09);
+    --card:#F5F2E8;
+    --ink:#21262B;
+    --ink-soft:#5B5D53;
+    --carry:#B3402F;
+    --brass:#A9832A;
+    --slate:#35607A;
+    --line:#C9C2AC;
+    --font-display:'Fraunces', serif;
+    --font-body:'Source Sans 3', sans-serif;
+    --font-mono:'IBM Plex Mono', monospace;
+  }
+
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+
+  body{
+    margin:0;
+    background:
+      linear-gradient(var(--paper-grid) 1px, transparent 1px) 0 0/100% 42px,
+      var(--paper);
+    color:var(--ink);
+    font-family:var(--font-body);
+    font-size:17px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  a{ color:var(--slate); }
+  ::selection{ background:var(--brass); color:var(--paper); }
+  :focus-visible{ outline:3px solid var(--slate); outline-offset:3px; border-radius:2px; }
+
+  .wrap{ max-width:920px; margin:0 auto; padding:0 28px; }
+
+  /* ---------- Header ---------- */
+  header.top{ padding:48px 0 0; }
+  .eyebrow{
+    font-family:var(--font-mono); font-size:12.5px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--slate); display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{ content:""; width:22px; height:1px; background:var(--slate); display:inline-block; }
+
+  .progress-wrap{ display:flex; align-items:center; gap:12px; margin-top:18px; flex-wrap:wrap; }
+  .progress-track{ flex:1 1 160px; max-width:220px; height:6px; background:var(--line); border-radius:3px; overflow:hidden; }
+  .progress-fill{ height:100%; width:0%; background:var(--slate); transition:width .35s ease; }
+  .progress-badge{ font-family:var(--font-mono); font-size:11.5px; color:var(--ink-soft); white-space:nowrap; }
+
+  /* ---------- Hero / ledger (unchanged concept) ---------- */
+  .hero{ padding:22px 0 60px; }
+  h1.headline{
+    font-family:var(--font-display); font-optical-sizing:auto; font-weight:600;
+    font-size:clamp(2.3rem, 5.4vw, 3.6rem); line-height:1.06; margin:14px 0 18px; max-width:15ch; color:var(--ink);
+  }
+  .headline em{ font-style:italic; color:var(--carry); }
+  .subhead{ max-width:56ch; color:var(--ink-soft); font-size:1.06rem; margin:0 0 40px; }
+
+  .ledger-panel{
+    background:var(--card); border:1px solid var(--line); border-radius:6px;
+    padding:28px 26px 30px; box-shadow:0 1px 0 rgba(33,38,43,0.04);
+  }
+  .ledger-controls{ display:flex; align-items:flex-end; gap:14px; flex-wrap:wrap; margin-bottom:26px; }
+  .field label{
+    display:block; font-family:var(--font-mono); font-size:11.5px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--ink-soft); margin-bottom:7px;
+  }
+  #num-input{
+    font-family:var(--font-mono); font-size:1.4rem; width:9ch; padding:8px 10px;
+    border:1px solid var(--line); border-radius:4px; background:#fff; color:var(--ink);
+  }
+  .roll-btn{
+    font-family:var(--font-mono); font-size:12.5px; letter-spacing:.06em; text-transform:uppercase;
+    background:transparent; border:1px solid var(--slate); color:var(--slate); padding:10px 16px;
+    border-radius:4px; cursor:pointer; transition:background .15s ease, color .15s ease;
+  }
+  .roll-btn:hover{ background:var(--slate); color:#fff; }
+  .ledger-strip{ display:flex; gap:10px; flex-wrap:wrap; border-top:1px dashed var(--line); padding-top:24px; }
+  .col{ flex:1 1 90px; text-align:center; opacity:0; transform:translateY(10px); animation:settle .5s ease forwards; }
+  .col .digit{
+    font-family:var(--font-display); font-size:2.6rem; font-weight:600; line-height:1;
+    padding:14px 6px 10px; border-radius:4px; transition:background .2s ease, color .2s ease;
+  }
+  .col:hover .digit{ background:var(--slate); color:#fff; }
+  .col .place{ font-family:var(--font-mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft); margin-top:4px; }
+  .col .weight{ font-family:var(--font-mono); font-size:12.5px; color:var(--brass); margin-top:2px; }
+  .sum-line{ margin-top:22px; font-family:var(--font-mono); font-size:1.02rem; color:var(--ink); overflow-x:auto; white-space:nowrap; }
+  .sum-line .eq{ color:var(--ink-soft); margin:0 8px; }
+  .sum-line .plus{ color:var(--ink-soft); margin:0 6px; }
+  .sum-line .term{ color:var(--slate); }
+  @keyframes settle{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
+
+  /* ---------- Dividers ---------- */
+  .divider{ display:flex; align-items:center; gap:14px; margin:8px 0 34px; }
+  .divider .line{ flex:1; height:1px; background:var(--line); }
+  .divider .label{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--ink-soft); white-space:nowrap;
+  }
+  .divider .num{
+    font-family:var(--font-mono); font-size:11px; color:#fff; background:var(--slate);
+    width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex:0 0 auto;
+  }
+
+  section.systems{ padding:40px 0 30px; }
+  .cards{ display:grid; grid-template-columns:repeat(3, 1fr); gap:18px; }
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:6px; padding:24px 20px 26px;
+    display:flex; flex-direction:column; gap:14px;
+  }
+  .card .glyph{ height:34px; }
+  .card .glyph svg{ height:100%; display:block; }
+  .card h3{ font-family:var(--font-display); font-weight:600; font-size:1.32rem; margin:0; }
+  .card p{ color:var(--ink-soft); font-size:.97rem; margin:0; }
+  .example{ margin-top:auto; padding-top:14px; border-top:1px dashed var(--line); font-family:var(--font-mono); font-size:.9rem; }
+  .chip{
+    display:inline-flex; align-items:center; gap:5px; background:#fff; border:1px solid var(--line);
+    border-radius:100px; padding:3px 10px; font-size:.82rem;
+  }
+  .chip b{ color:var(--carry); }
+  .chip.brass b{ color:var(--brass); }
+  .chip.slate b{ color:var(--slate); }
+  .tally-row{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .bundle{ display:flex; gap:2px; align-items:flex-end; position:relative; }
+  .stroke{ width:3px; height:22px; background:var(--ink); border-radius:1px; }
+  .bundle .cut{ position:absolute; width:26px; height:3px; background:var(--carry); top:9px; left:-2px; transform:rotate(-32deg); }
+  .stroke.single{ height:22px; }
+  .bases-row{ display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .base-tag{ font-family:var(--font-mono); font-size:.78rem; color:var(--ink-soft); border:1px solid var(--line); border-radius:4px; padding:2px 7px; }
+
+  /* ---------- Chapters (Binär / Oktal / Hex / Umrechnung / Referenz) ---------- */
+  section.chapter{ padding:52px 0 8px; border-top:1px dashed var(--line); margin-top:36px; }
+  .chap-sub{ color:var(--ink-soft); font-size:1.02rem; max-width:60ch; margin:0 0 30px; }
+  h2.chaptitle{ font-family:var(--font-display); font-weight:600; font-size:clamp(1.7rem,3.4vw,2.3rem); margin:0 0 6px; }
+
+  .grid-2{ display:grid; grid-template-columns:1.05fr .95fr; gap:40px; align-items:start; margin-bottom:10px; }
+  @media (max-width:800px){ .grid-2{ grid-template-columns:1fr; gap:26px; } }
+
+  ul.facts{ list-style:none; margin:0 0 20px; padding:0; }
+  ul.facts li{ padding:11px 0 11px 24px; border-bottom:1px solid var(--line); position:relative; font-size:.98rem; }
+  ul.facts li:last-child{ border-bottom:none; }
+  ul.facts li::before{ content:"—"; position:absolute; left:0; top:11px; color:var(--carry); font-size:13px; }
+  ul.facts b{ color:var(--ink); }
+
+  .digitrow{ display:flex; flex-wrap:wrap; gap:7px; margin:6px 0 8px; }
+  .digitchip{
+    font-family:var(--font-mono); font-size:13.5px; font-weight:600; background:#fff;
+    border:1px solid var(--line); border-radius:5px; padding:6px 10px; color:var(--slate);
+  }
+  .digitchip.muted{ color:var(--ink-soft); opacity:.4; }
+
+  .worked{ background:var(--card); border:1px solid var(--line); border-radius:6px; padding:22px 24px; }
+  .worked .wt{ font-family:var(--font-mono); font-size:11.5px; text-transform:uppercase; letter-spacing:.09em; color:var(--ink-soft); margin-bottom:12px; }
+  .worked .expr{ font-family:var(--font-mono); font-size:14.5px; line-height:2; color:var(--ink); }
+  .worked .expr .place{ color:var(--brass); }
+  .worked .expr .result{ color:var(--carry); font-weight:600; }
+
+  .callout{
+    margin:26px 0 34px; border-left:3px solid var(--brass); padding:16px 20px;
+    background:rgba(169,131,42,0.07); border-radius:0 6px 6px 0; font-size:14.5px;
+  }
+  .callout .ct{ font-family:var(--font-mono); font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--brass); margin-bottom:8px; }
+  table.kib{ width:100%; border-collapse:collapse; margin-top:12px; font-size:13.5px; }
+  table.kib td, table.kib th{ padding:7px 10px; border-bottom:1px solid var(--line); text-align:left; }
+  table.kib th{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; }
+  table.kib td.mono{ font-family:var(--font-mono); }
+
+  /* method cards + division + grouping */
+  .methodgrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:34px; }
+  @media (max-width:800px){ .methodgrid{ grid-template-columns:1fr; } }
+  .methodcard{ background:var(--card); border:1px solid var(--line); border-radius:6px; padding:18px 18px 20px; }
+  .methodcard .mn{ font-family:var(--font-mono); color:var(--carry); font-size:11px; letter-spacing:.08em; text-transform:uppercase; margin-bottom:8px; }
+  .methodcard h3{ font-family:var(--font-display); margin:0 0 8px; font-size:1.1rem; }
+  .methodcard p{ margin:0; font-size:.92rem; color:var(--ink-soft); }
+
+  h3.substep{ font-family:var(--font-display); font-size:1.15rem; margin:0 0 4px; }
+  p.subnote{ color:var(--ink-soft); font-size:.92rem; margin:0 0 14px; }
+
+  .divsteps{ font-family:var(--font-mono); font-size:13px; }
+  .divsteps .row{ display:grid; grid-template-columns:auto auto auto auto; gap:10px; padding:6px 0; border-bottom:1px solid var(--line); align-items:center; }
+  .divsteps .row span:nth-child(3){ color:var(--ink-soft); }
+  .divsteps .row .rem{ color:var(--carry); font-weight:600; text-align:right; }
+  .divsteps .readback{ margin-top:14px; padding-top:12px; border-top:1px dashed var(--line); color:var(--slate); font-size:13px; }
+
+  .groupdiagram{ margin-top:10px; }
+  .gbits{ display:flex; gap:4px; font-family:var(--font-mono); font-size:14.5px; flex-wrap:wrap; }
+  .gbits span{ padding:6px 7px; border-radius:4px; background:#fff; border:1px solid var(--line); }
+  .gbits .g1{ background:rgba(179,64,47,0.10); border-color:var(--carry); }
+  .gbits .g2{ background:rgba(53,96,122,0.10); border-color:var(--slate); }
+  .gbits .g3{ background:rgba(169,131,42,0.10); border-color:var(--brass); }
+  .garrow{ text-align:center; color:var(--ink-soft); font-size:12.5px; margin:8px 0; font-family:var(--font-mono); }
+  .gresult{ display:flex; gap:10px; font-family:var(--font-mono); font-size:19px; font-weight:600; flex-wrap:wrap; }
+  .gresult span{ padding:6px 14px; border-radius:5px; }
+  .gresult .g1{ background:rgba(179,64,47,0.12); color:var(--carry); }
+  .gresult .g2{ background:rgba(53,96,122,0.12); color:var(--slate); }
+  .gresult .g3{ background:rgba(169,131,42,0.12); color:var(--brass); }
+
+  /* ---------- switch console (paper punch-panel) ---------- */
+  .console{ background:var(--card); border:1px solid var(--line); border-radius:6px; padding:26px 24px 22px; }
+  .console-label{
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-soft);
+    margin-bottom:16px; display:flex; justify-content:space-between; align-items:baseline;
+  }
+  .console-label .rst{
+    cursor:pointer; color:var(--slate); border:1px solid var(--slate); border-radius:4px; padding:4px 10px;
+    text-transform:none; letter-spacing:0; font-size:11px; background:transparent; font-family:var(--font-mono);
+  }
+  .console-label .rst:hover{ background:var(--slate); color:#fff; }
+  .switchrow{ display:flex; gap:7px; justify-content:center; padding:4px 0; flex-wrap:wrap; }
+  .switchcell{ display:flex; flex-direction:column; align-items:center; gap:7px; width:42px; }
+  .switchcell .pow{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-soft); }
+  .switch{ width:32px; height:56px; background:#fff; border:1px solid var(--line); border-radius:5px; position:relative; cursor:pointer; transition:.15s; }
+  .switch:hover{ border-color:var(--slate); }
+  .switch .knob{
+    position:absolute; left:3px; top:29px; width:24px; height:24px; border-radius:50%;
+    background:var(--line); transition: top .16s cubic-bezier(.4,0,.2,1), background .16s;
+  }
+  .switch.on{ border-color:var(--slate); background:rgba(53,96,122,0.08); }
+  .switch.on .knob{ top:3px; background:var(--slate); }
+  .switchcell .bit{ font-family:var(--font-mono); font-size:11.5px; color:var(--ink-soft); }
+  .switchcell.on .bit{ color:var(--slate); font-weight:600; }
+  .readouts{ display:grid; grid-template-columns:repeat(4,1fr); gap:9px; margin-top:22px; }
+  .readout{ background:#fff; border:1px solid var(--line); border-radius:6px; padding:12px 8px 11px; text-align:center; }
+  .readout .val{ font-family:var(--font-mono); font-size:clamp(15px,3.2vw,21px); font-weight:600; color:var(--carry); word-break:break-all; }
+  .readout .lab{ font-family:var(--font-mono); font-size:9.5px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-soft); margin-top:5px; }
+  .equation{
+    margin-top:16px; padding:12px 14px; background:#fff; border:1px solid var(--line); border-radius:6px;
+    font-family:var(--font-mono); font-size:12.5px; color:var(--ink-soft); text-align:center; overflow-x:auto; white-space:nowrap;
+  }
+  .equation .hi{ color:var(--slate); font-weight:600; }
+  @media (max-width:560px){
+    .switchcell{ width:32px; }
+    .switch{ width:24px; height:46px; }
+    .switch .knob{ width:18px; height:18px; top:24px; }
+    .switch.on .knob{ top:3px; }
+    .readouts{ grid-template-columns:repeat(2,1fr); }
+  }
+
+  /* reference table */
+  table.reftable{ width:100%; border-collapse:collapse; font-family:var(--font-mono); font-size:13.5px; margin-top:8px; }
+  table.reftable th{ text-align:left; padding:9px 12px; border-bottom:2px solid var(--ink); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); }
+  table.reftable td{ padding:8px 12px; border-bottom:1px solid var(--line); }
+  table.reftable tr:hover td{ background:var(--card); }
+  table.reftable td.hex{ color:var(--carry); }
+
+  /* ---------- Task / Aufgabe component ---------- */
+  .task{
+    display:flex; gap:14px; align-items:flex-start; padding:14px 16px; background:var(--card);
+    border:1px solid var(--line); border-left:3px solid var(--line); border-radius:0 6px 6px 0; margin:14px 0;
+  }
+  .task.pflicht{ border-left-color:var(--slate); }
+  .task.optional{ border-left-color:var(--brass); }
+  .task.vertiefung{ border-left-color:var(--carry); }
+  .task-check{
+    width:25px; height:25px; flex:0 0 auto; border:2px solid var(--ink-soft); border-radius:4px; background:#fff;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; margin-top:2px;
+  }
+  .task-check .mark{ opacity:0; transform:scale(.5) rotate(-12deg); color:#fff; font-size:14px; line-height:1; transition:.15s; font-weight:700; }
+  .task.done{ background:rgba(91,93,83,0.06); }
+  .task.done .task-check{ background:var(--ink-soft); border-color:var(--ink-soft); }
+  .task.done .task-check .mark{ opacity:1; transform:scale(1) rotate(0deg); }
+  .task.done .task-body p{ color:var(--ink-soft); text-decoration:line-through; text-decoration-color:var(--line); text-decoration-thickness:1.5px; }
+  .task-tag{ font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:4px; }
+  .task.pflicht .task-tag{ color:var(--slate); }
+  .task.optional .task-tag{ color:var(--brass); }
+  .task.vertiefung .task-tag{ color:var(--carry); }
+  .task-body p{ margin:0; font-size:.95rem; }
+  .task-body ul{ margin:8px 0 0; padding-left:20px; font-size:.88rem; color:var(--ink-soft); columns:2; }
+  @media (max-width:560px){ .task-body ul{ columns:1; } }
+  .task-body ul li{ margin-bottom:3px; }
+
+  /* ---------- Recap / footer ---------- */
+  footer.recap{ padding:20px 0 70px; }
+  .recap-list{ list-style:none; padding:0; margin:0 0 28px; display:grid; gap:10px; }
+  .recap-list li{ display:flex; gap:12px; align-items:baseline; font-size:.98rem; }
+  .dot{ width:9px; height:9px; border-radius:50%; flex:0 0 auto; transform:translateY(-1px); }
+  .dot.add{ background:var(--carry); }
+  .dot.pos{ background:var(--slate); }
+  .dot.hyb{ background:var(--brass); }
+  .recap-list b{ font-family:var(--font-mono); font-size:.86em; letter-spacing:.02em; }
+  .footnote{ font-size:.82rem; color:var(--ink-soft); border-top:1px solid var(--line); padding-top:16px; }
+
+  .lernkontrolle{
+    display:none; margin-top:24px; padding:18px 20px; background:rgba(53,96,122,0.08);
+    border:1px solid var(--slate); border-radius:6px; font-size:.95rem;
+  }
+  .lernkontrolle b{ font-family:var(--font-display); font-size:1.05rem; display:block; margin-bottom:4px; }
+
+  @media (max-width:720px){
+    .cards{ grid-template-columns:1fr; }
+    .col .digit{ font-size:2.1rem; }
+    .methodgrid{ grid-template-columns:1fr; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    html{ scroll-behavior:auto; }
+    .col{ animation:none; opacity:1; transform:none; }
+    .roll-btn, .col .digit, .switch .knob{ transition:none; }
+  }
+
+  /* ---------- Musterlösungen ---------- */
+  details.loesung{
+    margin-top:12px; border:1px solid var(--line); border-radius:5px;
+    background:#fff; overflow:hidden;
+  }
+  details.loesung > summary{
+    cursor:pointer; list-style:none; padding:9px 13px;
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--slate); display:flex; align-items:center; gap:8px; user-select:none;
+  }
+  details.loesung > summary::-webkit-details-marker{ display:none; }
+  details.loesung > summary::before{
+    content:"▸"; font-size:11px; transition:transform .15s ease; display:inline-block;
+  }
+  details.loesung[open] > summary::before{ transform:rotate(90deg); }
+  details.loesung > summary:hover{ background:rgba(53,96,122,0.06); }
+  .loesung-body{ padding:2px 15px 16px; font-size:14.7px; border-top:1px solid var(--line); }
+  .loesung-body p{ margin:12px 0; }
+  .loesung-body ul{ margin:10px 0; padding-left:20px; }
+  .loesung-body li{ margin:5px 0; }
+  .loesung-body .mono{ font-family:var(--font-mono); }
+  .merksatz{
+    margin:14px 0 4px; padding:11px 14px; background:rgba(53,96,122,0.08);
+    border-left:3px solid var(--slate); border-radius:0 5px 5px 0; font-size:14.5px;
+  }
+  .merksatz b{ color:var(--slate); }
+
+  /* ---------- Stellenwert-Streifen (statisch) ---------- */
+  .pvset{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin:26px 0 6px; }
+  @media (max-width:860px){ .pvset{ grid-template-columns:1fr; } }
+  .pv{ background:var(--card); border:1px solid var(--line); border-radius:6px; padding:18px 16px 16px; }
+  .pv .pvt{ font-family:var(--font-mono); font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:12px; }
+  .pv .digits{ display:flex; gap:0; font-family:var(--font-mono); }
+  .pv .digits > div{ flex:1; text-align:center; }
+  .pv .dg{ font-size:26px; font-weight:600; line-height:1.1; }
+  .pv .pl{
+    font-size:11.5px; color:var(--slate); border:1px solid var(--line); background:#fff;
+    padding:4px 0; margin-top:4px;
+  }
+  .pv .digits > div:not(:first-child) .pl{ border-left:none; }
+  .pv .calc{ font-family:var(--font-mono); font-size:13.5px; margin-top:16px; }
+  .pv .calc .row{ display:flex; justify-content:space-between; gap:10px; padding:2px 0; }
+  .pv .calc .row span:first-child{ color:var(--ink-soft); }
+  .pv .calc .row.total{ border-top:1.5px solid var(--ink); margin-top:6px; padding-top:6px; font-weight:600; }
+  .pv .calc .row.total span:last-child{ color:var(--carry); }
+
+  /* ---------- Rezept + Rechenweg ---------- */
+  .recipe{ background:var(--card); border:1px solid var(--line); border-radius:6px; padding:20px 22px; margin:16px 0; }
+  .recipe h4{
+    font-family:var(--font-display); font-weight:600; font-size:1.18rem; margin:0 0 4px;
+  }
+  .recipe .dir{ font-family:var(--font-mono); font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--carry); margin-bottom:10px; }
+  .recipe ol{ margin:8px 0 14px; padding-left:20px; font-size:14.6px; }
+  .recipe ol li{ margin:4px 0; }
+  .rechnung{
+    font-family:var(--font-mono); font-size:13.5px; line-height:1.85; background:#fff;
+    border:1px solid var(--line); border-radius:5px; padding:12px 14px; overflow-x:auto;
+  }
+  .rechnung .res{ color:var(--carry); font-weight:600; }
+  .rechnung .hint{ color:var(--ink-soft); }
+  .rechnung .arrow{ color:var(--slate); }
+  .methodhead{
+    display:flex; align-items:baseline; gap:12px; margin:38px 0 6px; padding-bottom:8px;
+    border-bottom:1.5px solid var(--ink);
+  }
+  .methodhead .mno{ font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--carry); }
+  .methodhead h3{ font-family:var(--font-display); font-weight:600; font-size:1.5rem; margin:0; }
+  .methodhead .when{ margin-left:auto; font-size:13px; color:var(--ink-soft); }
+  @media (max-width:640px){ .methodhead .when{ margin-left:0; flex-basis:100%; } }
+
+  table.solved{ width:100%; border-collapse:collapse; font-family:var(--font-mono); font-size:13.5px; margin:14px 0 8px; }
+  table.solved th, table.solved td{ padding:8px 10px; border-bottom:1px solid var(--line); text-align:left; }
+  table.solved th{ font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); }
+  table.solved td.start{ color:var(--carry); font-weight:600; }
+  table.solved tr:hover td{ background:rgba(53,96,122,0.04); }
+  .wrapscroll{ overflow-x:auto; }
+
+  /* Overrides, damit Lösungslisten nicht in den Aufgaben-Spaltensatz fallen */
+  .task-body{ flex:1 1 auto; min-width:0; }
+  .loesung-body ul{ columns:1; color:var(--ink); font-size:14.7px; }
+  .loesung-body ul li{ margin-bottom:5px; }
+  .loesung-body p{ font-size:14.7px; }
+  .loesung-body table.solved{ font-size:12.8px; }
+  .loesung-body table.solved td, .loesung-body table.solved th{ padding:6px 8px; }
+
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">Modul 114 · Zahlensysteme</div>
+    <div class="progress-wrap">
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+      <span class="progress-badge" id="progress-badge">Aufgaben werden geladen …</span>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1 class="headline">Es kommt auf <em>die Stelle</em> an.</h1>
+    <p class="subhead">Dieselbe Ziffer, verschiedene Werte — nur weil sie an einer anderen Position steht. Tippe eine Zahl ein und sieh, wie das Zehnersystem sie zerlegt. Weiter unten geht es mit Binär-, Oktal- und Hexadezimalsystem weiter — mit allen Aufgaben aus dem Skript, jeder Musterlösung und allen zwölf Umrechnungsrichtungen Schritt für Schritt durchgerechnet.</p>
+
+    <div class="ledger-panel">
+      <div class="ledger-controls">
+        <div class="field">
+          <label for="num-input">Deine Zahl</label>
+          <input id="num-input" type="text" inputmode="numeric" maxlength="6" value="2026" aria-describedby="ledger-help">
+        </div>
+        <button class="roll-btn" id="roll-btn" type="button">Andere Zahl ⟳</button>
+      </div>
+      <div id="ledger-help" style="position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);">Gib bis zu sechs Ziffern ein, um zu sehen, wie jede Ziffer je nach Position gewichtet wird.</div>
+      <div class="ledger-strip" id="ledger-strip"></div>
+      <div class="sum-line" id="sum-line"></div>
+    </div>
+
+    <div class="pvset">
+      <div class="pv">
+        <div class="pvt">1853 · Basis 10</div>
+        <div class="digits">
+          <div><div class="dg">1</div><div class="pl">1000</div></div>
+          <div><div class="dg">8</div><div class="pl">100</div></div>
+          <div><div class="dg">5</div><div class="pl">10</div></div>
+          <div><div class="dg">3</div><div class="pl">1</div></div>
+        </div>
+        <div class="calc">
+          <div class="row"><span>1 × 1000</span><span>1000</span></div>
+          <div class="row"><span>8 × 100</span><span>800</span></div>
+          <div class="row"><span>5 × 10</span><span>50</span></div>
+          <div class="row"><span>3 × 1</span><span>3</span></div>
+          <div class="row total"><span>Summe</span><span>1853</span></div>
+        </div>
+      </div>
+      <div class="pv">
+        <div class="pvt">1011 · Basis 2</div>
+        <div class="digits">
+          <div><div class="dg">1</div><div class="pl">8</div></div>
+          <div><div class="dg">0</div><div class="pl">4</div></div>
+          <div><div class="dg">1</div><div class="pl">2</div></div>
+          <div><div class="dg">1</div><div class="pl">1</div></div>
+        </div>
+        <div class="calc">
+          <div class="row"><span>1 × 8</span><span>8</span></div>
+          <div class="row"><span>0 × 4</span><span>0</span></div>
+          <div class="row"><span>1 × 2</span><span>2</span></div>
+          <div class="row"><span>1 × 1</span><span>1</span></div>
+          <div class="row total"><span>Summe</span><span>11</span></div>
+        </div>
+      </div>
+      <div class="pv">
+        <div class="pvt">2A3 · Basis 16</div>
+        <div class="digits">
+          <div><div class="dg">2</div><div class="pl">256</div></div>
+          <div><div class="dg">A</div><div class="pl">16</div></div>
+          <div><div class="dg">3</div><div class="pl">1</div></div>
+        </div>
+        <div class="calc">
+          <div class="row"><span>2 × 256</span><span>512</span></div>
+          <div class="row"><span>10 × 16</span><span>160</span></div>
+          <div class="row"><span>3 × 1</span><span>3</span></div>
+          <div class="row total"><span>Summe</span><span>675</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="footnote" style="margin-top:2px">Drei verschiedene Basen, ein einziges Prinzip: <b>Ziffer × Stellenwert, alles addieren</b>. Die Stellenwerte sind immer die Potenzen der Basis, ganz rechts beginnend mit 1. Bei Basis 10: 1, 10, 100, 1000. Bei Basis 2: 1, 2, 4, 8. Bei Basis 16: 1, 16, 256.</p>
+
+    <div class="callout">
+      <div class="ct">Wenn dir nur eine Sache hängen bleibt</div>
+      Die Stellenwerte entstehen immer gleich: ganz rechts steht <b>1</b>, und jede Stelle weiter links ist <b>Basis-mal so viel</b> wie die rechts daneben.
+      Basis 2: 1 → 2 → 4 → 8 → 16 → 32 → 64 → 128. Basis 8: 1 → 8 → 64 → 512. Basis 16: 1 → 16 → 256 → 4096.
+      Diese Zahlenreihen musst du nicht auswendig können — du kannst sie in fünf Sekunden hinschreiben, indem du rechts mit 1 anfängst und immer mal die Basis rechnest.
+    </div>
+
+    <div class="task pflicht" data-task="wiki-stellenwert">
+      <button class="task-check" aria-pressed="false" type="button"><span class="mark">✓</span></button>
+      <div class="task-body">
+        <div class="task-tag">Pflichtaufgabe</div>
+        <p>Lesen Sie den Wikipedia-Artikel über <a href="https://de.wikipedia.org/wiki/Stellenwertsystem" target="_blank" rel="noopener">Stellenwertsysteme</a>.</p>
+      
+        <details class="loesung" open>
+          <summary>Musterlösung</summary>
+          <div class="loesung-body">
+<p>Kurzfassung, falls du den Artikel nur überfliegst:</p>
+<ul>
+  <li>Ein <b>Stellenwertsystem</b> hat eine <b>Basis b</b> und genau <b>b Ziffern</b> — von 0 bis b−1. Basis 10 → Ziffern 0–9, Basis 2 → nur 0 und 1.</li>
+  <li>Der Wert einer Ziffer hängt von ihrer <b>Position</b> ab. Von rechts nach links haben die Stellen die Werte <span class="mono">b⁰, b¹, b², b³ …</span></li>
+  <li>Die <b>Null</b> ist dabei zwingend nötig: sie markiert eine leere Stelle. Ohne sie könnte man 37 und 307 nicht unterscheiden.</li>
+  <li>Gegenstück: das <b>Additionssystem</b> (römische Zahlen). Dort zählt die Position nicht, man addiert einfach alle Zeichen.</li>
+</ul></div>
+        </details>
+      </div>
+    </div>
+    <div class="task pflicht" data-task="beschreibung-stellenwert">
+      <button class="task-check" aria-pressed="false" type="button"><span class="mark">✓</span></button>
+      <div class="task-body">
+        <div class="task-tag">Pflichtaufgabe</div>
+        <p>Schreiben Sie eine kurze Beschreibung des Begriffs <b>Stellenwertsystem</b> auf.</p>
+      
+        <details class="loesung" open>
+          <summary>Musterlösung</summary>
+          <div class="loesung-body">
+<p>So kannst du es ins Heft schreiben:</p>
+<div class="merksatz">
+  <b>Stellenwertsystem:</b> Ein Zahlensystem, bei dem der Wert einer Ziffer davon abhängt, an welcher Stelle sie in der Zahl steht.
+  Jedes System hat eine Basis b und verwendet b Ziffern (0 bis b−1). Die Stellen haben von rechts nach links die Werte b⁰, b¹, b², b³ …
+  Der Wert der ganzen Zahl ist die Summe aus <i>Ziffer × Stellenwert</i>. Die Ziffer 0 ist nötig, um leere Stellen zu kennzeichnen.
+</div>
+<p class="mono" style="margin-top:12px">Beispiel: 1853₁₀ = 1×1000 + 8×100 + 5×10 + 3×1 &nbsp;→&nbsp; dieselbe Ziffer 5 wäre in 1853 wert 50, in 1583 aber 500.</p>
+<p>Dezimal, Binär, Oktal und Hexadezimal sind <b>alle</b> Stellenwertsysteme — sie unterscheiden sich nur in der Basis.</p></div>
+        </details>
+      </div>
+    </div>
+    <div class="task optional" data-task="geschichte-zahlensysteme">
+      <button class="task-check" aria-pressed="false" type="button"><span class="mark">✓</span></button>
+      <div class="task-body">
+        <div class="task-tag">Optionale Aufgabe</div>
+        <p>Lesen Sie einen Artikel zur Geschichte der Zahlensysteme durch, um mehr über ihre Entstehung zu erfahren.</p>
+      
+        <details class="loesung" open>
+          <summary>Musterlösung</summary>
+          <div class="loesung-body">
+<p>Die Kurzgeschichte in fünf Stationen:</p>
+<ul>
+  <li><b>Strichlisten</b> — älteste Form, jede Einheit ein Strich. Funktioniert nur für kleine Zahlen.</li>
+  <li><b>Babylonier</b> — rechneten mit Basis 60. Davon haben wir heute noch die 60 Minuten und die 360 Grad.</li>
+  <li><b>Römer</b> — Additionssystem (I, V, X, L, C, D, M). Lesbar, aber zum Rechnen fast unbrauchbar.</li>
+  <li><b>Indien, ca. 500 n. Chr.</b> — Stellenwertsystem <i>mit</i> der Null. Über arabische Gelehrte kam es nach Europa, deshalb «indisch-arabische Ziffern».</li>
+  <li><b>Leibniz, 1703</b> — beschreibt das Binärsystem. Rund 240 Jahre später wird es zur Grundlage jedes Computers.</li>
+</ul></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="systems">
+    <div class="divider"><span class="line"></span><span class="label">Drei Familien von Zahlensystemen</span><span class="line"></span></div>
+    <div class="cards">
+      <article class="card">
+        <div class="glyph" aria-hidden="true">
+          <svg viewBox="0 0 60 34"><g stroke="#21262B" stroke-width="3" stroke-linecap="round">
+            <line x1="6" y1="6" x2="6" y2="28"/><line x1="14" y1="6" x2="14" y2="28"/><line x1="22" y1="6" x2="22" y2="28"/><line x1="30" y1="6" x2="30" y2="28"/>
+            <line x1="2" y1="24" x2="34" y2="10" stroke="#B3402F"/>
+          </g></svg>
+        </div>
+        <h3>Additionssystem</h3>
+        <p>Man zählt die Werte der Zeichen einfach zusammen. Die Reihenfolge ändert nichts am Ergebnis.</p>
+        <div class="example">
+          XVI = <span class="chip"><b>X</b> 10</span> + <span class="chip"><b>V</b> 5</span> + <span class="chip"><b>I</b> 1</span> = 16
+          <div class="tally-row" aria-hidden="true">
+            <div class="bundle"><div class="stroke"></div><div class="stroke"></div><div class="stroke"></div><div class="stroke"></div><div class="stroke"></div><div class="cut"></div></div>
+            <div class="bundle"><div class="stroke"></div><div class="stroke"></div><div class="stroke"></div><div class="stroke"></div><div class="stroke"></div><div class="cut"></div></div>
+            <div class="bundle"><div class="stroke"></div><div class="stroke"></div><div class="stroke"></div><div class="stroke"></div><div class="stroke"></div><div class="cut"></div></div>
+            <div class="stroke single"></div>
+          </div>
+        </div>
+      </article>
+      <article class="card">
+        <div class="glyph" aria-hidden="true">
+          <svg viewBox="0 0 60 34"><g fill="none" stroke="#35607A" stroke-width="3"><line x1="4" y1="30" x2="56" y2="30"/></g>
+          <g fill="#35607A"><rect x="8" y="20" width="9" height="10" rx="1.5"/><rect x="25" y="12" width="9" height="18" rx="1.5"/><rect x="42" y="4" width="9" height="26" rx="1.5"/></g></svg>
+        </div>
+        <h3>Stellenwertsystem</h3>
+        <p>Der Wert einer Ziffer hängt von ihrer Position ab — genau wie oben im Rechenstreifen. Binär, Oktal und Hex gehören auch hierher.</p>
+        <div class="example">
+          <span class="chip slate"><b>2</b> in 20 → ×10</span>
+          <span class="chip slate"><b>2</b> in 200 → ×100</span>
+          <div class="bases-row" aria-hidden="true">
+            <span class="base-tag">Dual · 2</span><span class="base-tag">Oktal · 8</span><span class="base-tag">Dezimal · 10</span><span class="base-tag">Hex · 16</span>
+          </div>
+        </div>
+      </article>
+      <article class="card">
+        <div class="glyph" aria-hidden="true">
+          <svg viewBox="0 0 60 34"><g fill="none" stroke="#A9832A" stroke-width="3"><path d="M6 8 H40 L52 17 L40 26 H6 Z"/></g>
+          <circle cx="14" cy="17" r="2.4" fill="#A9832A"/><text x="24" y="21" font-family="IBM Plex Mono, monospace" font-size="12" fill="#A9832A">×10³</text></svg>
+        </div>
+        <h3>Hybridsystem</h3>
+        <p>Ziffern werden mit Zehnerpotenzen kombiniert und multipliziert — wie „drei Millionen" im Deutschen.</p>
+        <div class="example">三万六十 = <span class="chip brass"><b>3</b> × 10.000</span> + <span class="chip brass"><b>6</b> × 10</span> = 30.060</div>
+      </article>
+    </div>
+  </section>
+
+  <!-- BINÄR -->
+  <section class="chapter" id="binaer">
+    <div class="divider"><span class="num">01</span><span class="label">Basis 2 · Binärsystem</span><span class="line"></span></div>
+    <h2 class="chaptitle">Nur an oder aus</h2>
+    <p class="chap-sub">Ein Computer kennt intern keine Zehn, nur Spannung oder keine Spannung — 1 oder 0. Deshalb rechnet er im Binärsystem, auch wenn er uns Ergebnisse dezimal anzeigt.</p>
+
+    <div class="grid-2">
+      <div>
+        <ul class="facts">
+          <li>Es gibt nur die <b>zwei Ziffern 0 und 1</b>. „Zwei" ist bereits zusammengesetzt und wird als <span style="font-family:var(--font-mono)">10</span> geschrieben.</li>
+          <li>Die Stellen entsprechen den <b>Zweierpotenzen</b> — 1, 2, 4, 8, 16, 32, 64, 128 …</li>
+          <li>Schreibweise: eine tiefgestellte <span style="font-family:var(--font-mono)">2</span>, z. B. <span style="font-family:var(--font-mono)">11<sub>2</sub></span> oder <span style="font-family:var(--font-mono)">10010<sub>2</sub></span>.</li>
+          <li>Acht Bits bilden ein <b>Byte</b> — Werte von 0 bis 255.</li>
+        </ul>
+      </div>
+      <div class="worked">
+        <div class="wt">317 dezimal in Zweierpotenzen</div>
+        <div class="expr">
+          1×2<span class="place">⁸</span> + 0×2<span class="place">⁷</span> + 0×2<span class="place">⁶</span> + 1×2<span class="place">⁵</span> + 1×2<span class="place">⁴</span> + 1×2<span class="place">³</span> + 1×2<span class="place">²</span> + 0×2<span class="place">¹</span> + 1×2<span class="place">⁰</span><br>
+          = 256 + 32 + 16 + 8 + 4 + 1<br>
+          = <span class="result">317</span> → binär <span class="result">100111101</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="task pflicht" data-task="binaer-bedeutung">
+      <button class="task-check" aria-pressed="false" type="button"><span class="mark">✓</span></button>
+      <div class="task-body">
+        <div class="task-tag">Pflichtaufgabe</div>
+        <p>Weshalb hat das Binärsystem in der Informatik eine grosse Bedeutung?</p>
+      
+        <details class="loesung" open>
+          <summary>Musterlösung</summary>
+          <div class="loesung-body">
+<p>Weil sich <b>zwei</b> Zustände technisch sauber und störungsfrei bauen lassen — zehn nicht.</p>
+<ul>
+  <li>Ein Transistor kennt praktisch nur <b>Strom fliesst / fliesst nicht</b>. Das lässt sich direkt als 1 und 0 lesen.</li>
+  <li>Das gilt für jeden Speichertyp: magnetisiert / nicht magnetisiert, Ladung / keine Ladung, Vertiefung / keine Vertiefung auf der CD.</li>
+  <li><b>Störungssicherheit:</b> bei zwei Zuständen liegen die Spannungspegel weit auseinander. Kleine Schwankungen ändern nichts. Bei zehn Pegeln müsste man 0.3 V von 0.4 V unterscheiden — jedes Rauschen gäbe einen Lesefehler.</li>
+  <li>Die <b>boolesche Algebra</b> (AND, OR, NOT) arbeitet ebenfalls mit zwei Werten und lässt sich 1:1 in Schaltungen umsetzen. Rechnen und Logik verwenden dieselbe Hardware.</li>
+  <li>Zwei Zustände heisst: <b>einfache, billige, schnelle</b> Bauteile — und davon Milliarden auf einem Chip.</li>
+</ul>
+<div class="merksatz"><b>Ein Satz für die Prüfung:</b> Der Computer arbeitet binär, weil sich zwei klar unterscheidbare physikalische Zustände einfach, günstig und störungssicher realisieren lassen und direkt zur booleschen Logik passen.</div></div>
+        </details>
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="ct">Exkurs · Kilobyte vs. Kibibyte</div>
+      Weil im Binärsystem gerechnet wird, entsprach ein „Kilobyte" in der Informatik lange 1024 Bytes statt der eigentlich gemeinten 1000. Seit einer Klarstellung Ende der 1990er-Jahre gibt es für die binäre Variante eigene Präfixe.
+      <table class="kib">
+        <tr><th>Präfix</th><th>Bedeutung</th><th>Wert</th></tr>
+        <tr><td class="mono">1 kB</td><td>Kilobyte (dezimal)</td><td class="mono">1'000 Byte</td></tr>
+        <tr><td class="mono">1 KiB</td><td>Kibibyte (binär)</td><td class="mono">1'024 Byte</td></tr>
+        <tr><td class="mono">1 MB</td><td>Megabyte (dezimal)</td><td class="mono">1'000'000 Byte</td></tr>
+        <tr><td class="mono">1 MiB</td><td>Mebibyte (binär)</td><td class="mono">1'048'576 Byte</td></tr>
+      </table>
+    </div>
+    <div class="task optional" data-task="wiki-kibibyte">
+      <button class="task-check" aria-pressed="false" type="button"><span class="mark">✓</span></button>
+      <div class="task-body">
+        <div class="task-tag">Optionale Aufgabe</div>
+        <p>Lesen Sie den <a href="https://de.wikipedia.org/wiki/Byte" target="_blank" rel="noopener">Wikipedia-Artikel</a> zum Thema Kilobyte/Kibibyte durch.</p>
+      
+        <details class="loesung" open>
+          <summary>Musterlösung</summary>
+          <div class="loesung-body">
+<ul>
+  <li>2¹⁰ = 1024 liegt nahe bei 1000 — deshalb wurde früher einfach «Kilobyte» für 1024 Byte gesagt. Bei jeder weiteren Stufe wächst der Fehler: bei Tera sind es schon rund 10 %.</li>
+  <li>1998 hat die <b>IEC</b> eigene binäre Präfixe eingeführt: Kibi, Mebi, Gibi, Tebi (KiB, MiB, GiB, TiB) — jeweils Faktor 1024.</li>
+  <li>kB, MB, GB bedeuten seither <b>dezimal</b> (Faktor 1000).</li>
+  <li>Deshalb der Klassiker: Eine Festplatte mit «1 TB» (= 1'000'000'000'000 Byte, dezimal gerechnet) zeigt Windows als ca. 931 GB an — Windows rechnet in Wahrheit in GiB, beschriftet es aber falsch als GB.</li>
+</ul></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- OKTAL -->
+  <section class="chapter" id="oktal">
+    <div class="divider"><span class="num">02</span><span class="label">Basis 8 · Oktalsystem</span><span class="line"></span></div>
+    <h2 class="chaptitle">Drei Bits auf einmal</h2>
+    <p class="chap-sub">8 = 2³ — eine Oktalziffer entspricht deshalb genau drei Bit. Damit lassen sich lange Binärzahlen kompakter, aber verlustfrei notieren.</p>
+
+    <div class="grid-2">
+      <div>
+        <ul class="facts">
+          <li>Es gibt die <b>acht Ziffern 0–7</b>. „Acht" ist die erste zusammengesetzte Zahl, geschrieben als <span style="font-family:var(--font-mono)">10</span>.</li>
+          <li>Die Stellen entsprechen den <b>Achterpotenzen</b>: Einer, Achter, Vierundsechziger …</li>
+          <li>Schreibweise: eine tiefgestellte <span style="font-family:var(--font-mono)">8</span>, z. B. <span style="font-family:var(--font-mono)">123<sub>8</sub></span>.</li>
+          <li>Heute noch bei <b>Unix-Dateiberechtigungen</b> zu finden (<span style="font-family:var(--font-mono)">chmod 755</span>).</li>
+        </ul>
+        <div class="digitrow">
+          <span class="digitchip">0</span><span class="digitchip">1</span><span class="digitchip">2</span><span class="digitchip">3</span><span class="digitchip">4</span><span class="digitchip">5</span><span class="digitchip">6</span><span class="digitchip">7</span>
+          <span class="digitchip muted">8</span><span class="digitchip muted">9</span>
+        </div>
+      </div>
+      <div class="worked">
+        <div class="wt">Stellenwert von 5153₈</div>
+        <div class="expr">
+          5×8<span class="place">³</span> + 1×8<span class="place">²</span> + 5×8<span class="place">¹</span> + 3×8<span class="place">⁰</span><br>
+          = 2560 + 64 + 40 + 3<br>
+          = <span class="result">2667</span> im Zehnersystem
+        </div>
+      </div>
+    </div>
+
+    <div class="task pflicht" data-task="oktal-verwendung">
+      <button class="task-check" aria-pressed="false" type="button"><span class="mark">✓</span></button>
+      <div class="task-body">
+        <div class="task-tag">Pflichtaufgabe</div>
+        <p>Das Oktalsystem erscheint uns recht exotisch. Wo wird es denn heute noch verwendet?</p>
+      
+        <details class="loesung" open>
+          <summary>Musterlösung</summary>
+          <div class="loesung-body">
+<p>Überall dort, wo Bits in <b>Dreiergruppen</b> zusammengehören — eine Oktalziffer ist exakt 3 Bit.</p>
+<ul>
+  <li><b>Unix-/Linux-Dateirechte:</b> <span class="mono">chmod 755</span>. Jede Ziffer steht für die drei Bits <span class="mono">rwx</span> — 7 = 111 = rwx, 5 = 101 = r-x. Auch <span class="mono">umask 022</span> gehört dazu.</li>
+  <li><b>Escape-Sequenzen</b> in C, Python, Bash: <span class="mono">\033</span> ist das Escape-Zeichen (dezimal 27).</li>
+  <li><b>Zahlenpräfix im Code:</b> <span class="mono">0o755</span> in Python und JavaScript.</li>
+  <li><b>Luftfahrt:</b> Transpondercodes («Squawk») sind vierstellig oktal — deshalb gibt es 7500, aber keine 7800.</li>
+  <li><b>Historisch:</b> alte Rechner mit 12-, 24- oder 36-Bit-Wortbreite (z. B. PDP-8). Diese Breiten sind durch 3 teilbar, Oktal passte perfekt. Heute sind Wortbreiten durch 4 teilbar (8, 16, 32, 64 Bit) — darum hat Hexadezimal Oktal weitgehend abgelöst.</li>
+</ul></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- HEX -->
+  <section class="chapter" id="hex">
+    <div class="divider"><span class="num">03</span><span class="label">Basis 16 · Hexadezimalsystem</span><span class="line"></span></div>
+    <h2 class="chaptitle">Vier Bits, ein Zeichen</h2>
+    <p class="chap-sub">16 = 2⁴ — eine Hexziffer fasst genau ein halbes Byte (ein „Nibble"). Deshalb ist Hex die bevorzugte Notation für Speicheradressen, Farbwerte und Fehlercodes.</p>
+
+    <div class="grid-2">
+      <div>
+        <ul class="facts">
+          <li>Eigentlich braucht es Ziffern für 0 bis 15 — da keine einzelnen Ziffern über 9 existieren, verwendet man Buchstaben: <b>A = 10</b> bis <b>F = 15</b>.</li>
+          <li>Ziffernvorrat: <span style="font-family:var(--font-mono)">0 1 2 3 4 5 6 7 8 9 A B C D E F</span>.</li>
+          <li>Schreibweise: eine tiefgestellte <span style="font-family:var(--font-mono)">16</span>, z. B. <span style="font-family:var(--font-mono)">219<sub>16</sub></span>. In Programmcode meist mit Präfix: <span style="font-family:var(--font-mono)">0x1B</span>.</li>
+        </ul>
+        <div class="digitrow">
+          <span class="digitchip">0</span><span class="digitchip">1</span><span class="digitchip">2</span><span class="digitchip">3</span><span class="digitchip">4</span><span class="digitchip">5</span><span class="digitchip">6</span><span class="digitchip">7</span><span class="digitchip">8</span><span class="digitchip">9</span><span class="digitchip">A</span><span class="digitchip">B</span><span class="digitchip">C</span><span class="digitchip">D</span><span class="digitchip">E</span><span class="digitchip">F</span>
+        </div>
+      </div>
+      <div class="worked">
+        <div class="wt">Stellenwert von 2A3₁₆</div>
+        <div class="expr">
+          2×16<span class="place">²</span> + 10×16<span class="place">¹</span> + 3×16<span class="place">⁰</span><br>
+          = 512 + 160 + 3<br>
+          = <span class="result">675</span> im Zehnersystem
+        </div>
+      </div>
+    </div>
+
+    <div class="task pflicht" data-task="hex-begegnet">
+      <button class="task-check" aria-pressed="false" type="button"><span class="mark">✓</span></button>
+      <div class="task-body">
+        <div class="task-tag">Pflichtaufgabe</div>
+        <p>Wo ist Ihnen das Hexadezimalsystem bereits begegnet? Weshalb wird es in der Informatik gerne verwendet?</p>
+      
+        <details class="loesung" open>
+          <summary>Musterlösung</summary>
+          <div class="loesung-body">
+<p><b>Wo es dir begegnet:</b></p>
+<ul>
+  <li><b>CSS-Farben:</b> <span class="mono">#B3402F</span> — je zwei Hexziffern für Rot, Grün, Blau (0–255 pro Kanal).</li>
+  <li><b>MAC-Adressen</b> (<span class="mono">A4:5E:60:C1:0B:2F</span>) und <b>IPv6</b>.</li>
+  <li><b>Speicheradressen und Hexdumps</b>, Zahlen im Code mit Präfix <span class="mono">0x1B</span>.</li>
+  <li><b>Fehlercodes</b> wie <span class="mono">0x80070005</span>, <b>Git-Commit-Hashes</b>, <b>UUIDs</b>, <b>Unicode</b> (<span class="mono">U+2764</span>).</li>
+</ul>
+<p><b>Warum die Informatik es so gerne nutzt:</b></p>
+<ul>
+  <li>16 = 2⁴ — eine Hexziffer entspricht <b>genau 4 Bit</b> (ein Nibble), ein Byte also <b>genau 2 Hexziffern</b>. Immer. Ohne Rest.</li>
+  <li>Deshalb ist die Umrechnung Binär ↔ Hex reines <b>Gruppieren</b>, kein Rechnen — und man sieht dem Hexwert das Bitmuster noch an.</li>
+  <li>Es ist <b>viel kürzer</b> als Binär: aus 32 Bit werden 8 Zeichen.</li>
+  <li>Dezimal kann das nicht, weil 10 keine Zweierpotenz ist: 255₁₀ verrät nichts über die Bits, <span class="mono">FF</span> dagegen sofort «alle 8 Bits gesetzt».</li>
+</ul></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- UMRECHNUNG -->
+  <section class="chapter" id="umrechnung">
+    <div class="divider"><span class="num">04</span><span class="label">Verfahren · Umrechnung</span><span class="line"></span></div>
+    <h2 class="chaptitle">Zwischen den Systemen umrechnen</h2>
+    <p class="chap-sub">Zwölf mögliche Umrechnungsrichtungen — aber nur drei Methoden. Die Kunst besteht darin, die passende zu erkennen.</p>
+
+    <div class="methodgrid">
+      <div class="methodcard">
+        <div class="mn">Methode 1</div>
+        <h3>Division mit Rest</h3>
+        <p>Dezimal → andere Basis. Fortlaufend durch die Zielbasis dividieren, Reste notieren, von unten nach oben lesen.</p>
+      </div>
+      <div class="methodcard">
+        <div class="mn">Methode 2</div>
+        <h3>Stellenwertsumme</h3>
+        <p>Andere Basis → Dezimal. Jede Ziffer mit ihrer Stellenpotenz multiplizieren und alles addieren.</p>
+      </div>
+      <div class="methodcard">
+        <div class="mn">Methode 3</div>
+        <h3>Gruppierung</h3>
+        <p>Binär ↔ Oktal/Hex. Bits in 3er- (Oktal) oder 4er-Gruppen (Hex) bündeln — jede Gruppe = eine Ziffer.</p>
+      </div>
+    </div>
+
+    <h3 class="substep">Methode 1 in Aktion: 317 → Binär</h3>
+    <p class="subnote">Immer durch 2 dividieren, Rest notieren, bis nichts mehr übrig bleibt.</p>
+    <div class="worked" style="margin-bottom:34px;">
+      <div class="divsteps" id="divsteps"></div>
+      <div class="readback">Reste von unten nach oben gelesen: <b style="color:var(--carry)">100111101₂</b></div>
+    </div>
+
+    <h3 class="substep">Methode 3 in Aktion: dieselbe Zahl gruppiert</h3>
+    <p class="subnote">100111101₂ hat 9 Bits — von rechts in 3er- bzw. 4er-Gruppen aufgeteilt, mit Nullen aufgefüllt, wo eine Gruppe unvollständig ist.</p>
+    <div class="worked" style="margin-bottom:12px;">
+      <div class="wt">→ Oktal (3er-Gruppen)</div>
+      <div class="groupdiagram">
+        <div class="gbits"><span class="g1">100</span><span class="g2">111</span><span class="g3">101</span></div>
+        <div class="garrow">↓ jede Gruppe = eine Oktalziffer ↓</div>
+        <div class="gresult"><span class="g1">4</span><span class="g2">7</span><span class="g3">5</span></div>
+      </div>
+    </div>
+    <div class="worked" style="margin-bottom:30px;">
+      <div class="wt">→ Hexadezimal (4er-Gruppen)</div>
+      <div class="groupdiagram">
+        <div class="gbits"><span class="g1">0001</span><span class="g2">0011</span><span class="g3">1101</span></div>
+        <div class="garrow">↓ jede Gruppe = eine Hexziffer ↓</div>
+        <div class="gresult"><span class="g1">1</span><span class="g2">3</span><span class="g3">D</span></div>
+      </div>
+    </div>
+
+    <p style="color:var(--ink-soft); font-size:.95rem;">Kontrolle: <span style="font-family:var(--font-mono); color:var(--ink)">317<sub>10</sub> = 100111101<sub>2</sub> = 475<sub>8</sub> = 13D<sub>16</sub></span> — dieselbe Zahl, vier Schreibweisen. Probier es unten selbst aus.</p>
+
+    <div class="console" style="margin:20px 0 32px;">
+      <div class="console-label">
+        <span>Eigenes Bedienfeld · 8 Bit</span>
+        <button class="rst" data-target="lab">zurücksetzen</button>
+      </div>
+      <div class="switchrow" id="switches-lab"></div>
+      <div class="readouts" id="readouts-lab"></div>
+      <div class="equation" id="equation-lab"></div>
+    </div>
+
+    <div class="task pflicht" data-task="anleitungen-schreiben">
+      <button class="task-check" aria-pressed="false" type="button"><span class="mark">✓</span></button>
+      <div class="task-body">
+        <div class="task-tag">Pflichtaufgabe</div>
+        <p>Schreiben Sie stichwortartige Anleitungen für alle zwölf Umrechnungsrichtungen:</p>
+        <ul>
+          <li>Dezimal → Binär</li><li>Dezimal → Oktal</li><li>Dezimal → Hexadezimal</li>
+          <li>Binär → Oktal</li><li>Binär → Dezimal</li><li>Binär → Hexadezimal</li>
+          <li>Oktal → Binär</li><li>Oktal → Dezimal</li><li>Oktal → Hexadezimal</li>
+          <li>Hexadezimal → Binär</li><li>Hexadezimal → Oktal</li><li>Hexadezimal → Dezimal</li>
+        </ul>
+      
+        <details class="loesung" open>
+          <summary>Musterlösung</summary>
+          <div class="loesung-body">
+<p>Es gibt nur <b>drei</b> Methoden. Die Kunst ist zu erkennen, welche gefragt ist:</p>
+<div class="wrapscroll"><table class="solved">
+  <tr><th>Richtung</th><th>Methode</th><th>Kurzanleitung</th></tr>
+  <tr><td class="start">Dezimal → Binär</td><td>Division mit Rest</td><td>Fortlaufend durch 2 teilen, Reste notieren, von unten nach oben lesen</td></tr>
+  <tr><td class="start">Dezimal → Oktal</td><td>Division mit Rest</td><td>Dasselbe, aber durch 8</td></tr>
+  <tr><td class="start">Dezimal → Hex</td><td>Division mit Rest</td><td>Dasselbe, aber durch 16; Reste 10–15 als A–F schreiben</td></tr>
+  <tr><td class="start">Binär → Dezimal</td><td>Stellenwertsumme</td><td>Jede Ziffer × ihre Zweierpotenz, alles addieren</td></tr>
+  <tr><td class="start">Oktal → Dezimal</td><td>Stellenwertsumme</td><td>Jede Ziffer × ihre Achterpotenz, alles addieren</td></tr>
+  <tr><td class="start">Hex → Dezimal</td><td>Stellenwertsumme</td><td>Buchstaben zuerst in Zahlen (A=10 … F=15), dann × 16er-Potenz, addieren</td></tr>
+  <tr><td class="start">Binär → Oktal</td><td>Gruppieren</td><td>Von rechts in 3er-Gruppen, links mit Nullen auffüllen, jede Gruppe = 1 Oktalziffer</td></tr>
+  <tr><td class="start">Binär → Hex</td><td>Gruppieren</td><td>Von rechts in 4er-Gruppen, links auffüllen, jede Gruppe = 1 Hexziffer</td></tr>
+  <tr><td class="start">Oktal → Binär</td><td>Gruppieren</td><td>Jede Oktalziffer einzeln als 3 Bit schreiben, aneinanderhängen</td></tr>
+  <tr><td class="start">Hex → Binär</td><td>Gruppieren</td><td>Jede Hexziffer einzeln als 4 Bit schreiben, aneinanderhängen</td></tr>
+  <tr><td class="start">Oktal → Hex</td><td>Gruppieren ×2</td><td>Umweg über Binär: erst 3er-Gruppen auflösen, dann neu in 4er-Gruppen bündeln</td></tr>
+  <tr><td class="start">Hex → Oktal</td><td>Gruppieren ×2</td><td>Umweg über Binär: erst 4er-Gruppen auflösen, dann neu in 3er-Gruppen bündeln</td></tr>
+</table></div>
+<p>Jede dieser zwölf Richtungen ist im Kapitel <a href="#loesungen">«Eine Zahl, zwölf Wege»</a> mit vollem Rechnungsweg durchgerechnet.</p></div>
+        </details>
+      </div>
+    </div>
+    <div class="task pflicht" data-task="tabellen-ergaenzen">
+      <button class="task-check" aria-pressed="false" type="button"><span class="mark">✓</span></button>
+      <div class="task-body">
+        <div class="task-tag">Pflichtaufgabe</div>
+        <p>Ergänzen Sie die Umrechnungstabellen aus dem Skript mit Ihrer Anleitung. Wichtig: Zeigen Sie unbedingt immer den ganzen Rechnungsweg auf.</p>
+      
+        <details class="loesung" open>
+          <summary>Musterlösung</summary>
+          <div class="loesung-body">
+<p>Fünf komplett durchgerechnete Zahlen mit Rechnungsweg findest du im Kapitel <a href="#uebungstabelle">«Übungstabelle mit Rechnungsweg»</a> — Aufbau genau so, wie es die Lehrperson sehen will: Startwert, Weg, Ergebnis.</p></div>
+        </details>
+      </div>
+    </div>
+    <div class="task optional" data-task="tabellenkalkulation">
+      <button class="task-check" aria-pressed="false" type="button"><span class="mark">✓</span></button>
+      <div class="task-body">
+        <div class="task-tag">Optionale Aufgabe</div>
+        <p>Erstellen Sie mit einer Tabellenkalkulation eine Tabelle, die Dezimalzahlen in Binärzahlen umwandelt (z. B. mit <span style="font-family:var(--font-mono)">INT</span>, <span style="font-family:var(--font-mono)">MOD</span>, <span style="font-family:var(--font-mono)">CONCATENATE</span>, <span style="font-family:var(--font-mono)">IF</span>).</p>
+      
+        <details class="loesung" open>
+          <summary>Musterlösung</summary>
+          <div class="loesung-body">
+<p>So baust du die Tabelle in Google Sheets (Semikolon als Trennzeichen; in Excel je nach Einstellung Komma):</p>
+<div class="wrapscroll"><table class="solved">
+  <tr><th>Zelle</th><th>Formel</th><th>macht</th></tr>
+  <tr><td class="start">A2</td><td>156</td><td>Dezimalzahl, die du eingibst</td></tr>
+  <tr><td class="start">B2</td><td>=MOD(INT($A2/128);2)</td><td>Bit für 128</td></tr>
+  <tr><td class="start">C2</td><td>=MOD(INT($A2/64);2)</td><td>Bit für 64</td></tr>
+  <tr><td class="start">D2 … H2</td><td>=MOD(INT($A2/32);2) … =MOD(INT($A2/2);2)</td><td>Bits für 32, 16, 8, 4, 2</td></tr>
+  <tr><td class="start">I2</td><td>=MOD($A2;2)</td><td>Bit für 1</td></tr>
+  <tr><td class="start">J2</td><td>=IF($A2&gt;255;"zu gross";CONCATENATE(B2;C2;D2;E2;F2;G2;H2;I2))</td><td>fügt die 8 Bits zusammen, meldet Überlauf</td></tr>
+  <tr><td class="start">K2</td><td>=DEC2BIN(A2;8)</td><td>Kontrolle mit der eingebauten Funktion</td></tr>
+</table></div>
+<p><span class="mono">INT</span> schneidet die Nachkommastellen ab (= Ganzzahldivision), <span class="mono">MOD</span> liefert den Rest. Zusammen sind das genau die zwei Operationen der Division mit Rest — nur alle acht auf einmal statt untereinander.</p></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- REFERENZ -->
+
+  <!-- ALLE 12 RICHTUNGEN -->
+  <section class="chapter" id="loesungen">
+    <div class="divider"><span class="num">05</span><span class="label">Durchgerechnet</span><span class="line"></span></div>
+    <h2 class="chaptitle">Eine Zahl, zwölf Wege</h2>
+    <p class="chap-sub">156₁₀ = 10011100₂ = 234₈ = 9C₁₆ — viermal dieselbe Menge, nur anders aufgeschrieben. Alle zwölf Umrechnungen unten benutzen genau diese Zahl. Wenn dein Ergebnis nicht dazu passt, hast du dich verrechnet.</p>
+
+    <div class="callout">
+      <div class="ct">Welche Methode nehme ich? Zwei Fragen</div>
+      <b>1. Kommt Dezimal vor?</b> Dann brauchst du gerechnete Umrechnung — von Dezimal weg: Division mit Rest. Zu Dezimal hin: Stellenwertsumme.<br>
+      <b>2. Kein Dezimal beteiligt?</b> Dann geht es nur ums Gruppieren von Bits — 3 Bit pro Oktalziffer, 4 Bit pro Hexziffer. Da wird nichts gerechnet, nur umgepackt.
+    </div>
+
+    <div class="methodhead">
+      <span class="mno">Methode 1</span>
+      <h3>Division mit Rest</h3>
+      <span class="when">von Dezimal in ein anderes System</span>
+    </div>
+    <p>Du teilst fortlaufend durch die Zielbasis und schreibst jedes Mal den Rest auf. Warum das funktioniert: Der Rest beim Teilen durch 2 ist genau die letzte Binärstelle — teilen schiebt die Zahl eine Stelle nach rechts, der Rest fällt hinten raus. Deshalb wird das Ergebnis <b>von unten nach oben</b> gelesen: die letzte Stelle entsteht zuerst.</p>
+
+    <div class="recipe">
+      <div class="dir">Dezimal → Binär</div>
+      <h4>156₁₀ = 10011100₂</h4>
+      <ol>
+        <li>Zahl durch 2 teilen, Ganzzahlergebnis und Rest notieren.</li>
+        <li>Mit dem Ergebnis weitermachen, bis 0 übrig bleibt.</li>
+        <li>Reste von unten nach oben lesen.</li>
+      </ol>
+      <div class="rechnung">
+        156 : 2 = 78 &nbsp;Rest <b>0</b><br>
+        &nbsp;78 : 2 = 39 &nbsp;Rest <b>0</b><br>
+        &nbsp;39 : 2 = 19 &nbsp;Rest <b>1</b><br>
+        &nbsp;19 : 2 = &nbsp;9 &nbsp;Rest <b>1</b><br>
+        &nbsp;&nbsp;9 : 2 = &nbsp;4 &nbsp;Rest <b>1</b><br>
+        &nbsp;&nbsp;4 : 2 = &nbsp;2 &nbsp;Rest <b>0</b><br>
+        &nbsp;&nbsp;2 : 2 = &nbsp;1 &nbsp;Rest <b>0</b><br>
+        &nbsp;&nbsp;1 : 2 = &nbsp;0 &nbsp;Rest <b>1</b><br>
+        <span class="arrow">↑ von unten nach oben lesen</span> &nbsp;=&nbsp; <span class="res">10011100₂</span><br>
+        <span class="hint">Probe: 128 + 16 + 8 + 4 = 156 ✓</span>
+      </div>
+    </div>
+
+    <div class="recipe">
+      <div class="dir">Dezimal → Oktal</div>
+      <h4>156₁₀ = 234₈</h4>
+      <ol><li>Gleiches Vorgehen, aber durch <b>8</b> teilen.</li><li>Reste von unten nach oben lesen.</li></ol>
+      <div class="rechnung">
+        156 : 8 = 19 &nbsp;Rest <b>4</b><br>
+        &nbsp;19 : 8 = &nbsp;2 &nbsp;Rest <b>3</b><br>
+        &nbsp;&nbsp;2 : 8 = &nbsp;0 &nbsp;Rest <b>2</b><br>
+        <span class="arrow">↑ von unten nach oben</span> &nbsp;=&nbsp; <span class="res">234₈</span><br>
+        <span class="hint">Probe: 2×64 + 3×8 + 4 = 128 + 24 + 4 = 156 ✓</span>
+      </div>
+    </div>
+
+    <div class="recipe">
+      <div class="dir">Dezimal → Hexadezimal</div>
+      <h4>156₁₀ = 9C₁₆</h4>
+      <ol><li>Durch <b>16</b> teilen.</li><li>Reste ab 10 als Buchstabe schreiben: 10=A, 11=B, 12=C, 13=D, 14=E, 15=F.</li><li>Von unten nach oben lesen.</li></ol>
+      <div class="rechnung">
+        156 : 16 = 9 &nbsp;Rest <b>12</b> <span class="hint">→ C</span><br>
+        &nbsp;&nbsp;9 : 16 = 0 &nbsp;Rest <b>9</b><br>
+        <span class="arrow">↑ von unten nach oben</span> &nbsp;=&nbsp; <span class="res">9C₁₆</span><br>
+        <span class="hint">Probe: 9×16 + 12 = 144 + 12 = 156 ✓</span>
+      </div>
+    </div>
+
+    <div class="methodhead">
+      <span class="mno">Methode 2</span>
+      <h3>Stellenwertsumme</h3>
+      <span class="when">von einem anderen System nach Dezimal</span>
+    </div>
+    <p>Genau das, was die drei Streifen ganz oben zeigen: jede Ziffer mal ihren Stellenwert, dann alles addieren. Die Stellenwerte schreibst du dir am besten zuerst über die Ziffern.</p>
+
+    <div class="recipe">
+      <div class="dir">Binär → Dezimal</div>
+      <h4>10011100₂ = 156₁₀</h4>
+      <ol><li>Stellenwerte von rechts nach links darüberschreiben: 1, 2, 4, 8, 16, 32, 64, 128.</li><li>Nur dort addieren, wo eine 1 steht.</li></ol>
+      <div class="rechnung">
+        <span class="hint">128&nbsp;&nbsp;64&nbsp;&nbsp;32&nbsp;&nbsp;16&nbsp;&nbsp;&nbsp;8&nbsp;&nbsp;&nbsp;4&nbsp;&nbsp;&nbsp;2&nbsp;&nbsp;&nbsp;1</span><br>
+        &nbsp;&nbsp;1&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;1&nbsp;&nbsp;&nbsp;&nbsp;1&nbsp;&nbsp;&nbsp;1&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;0<br>
+        = 128 + 16 + 8 + 4 = <span class="res">156₁₀</span>
+      </div>
+    </div>
+
+    <div class="recipe">
+      <div class="dir">Oktal → Dezimal</div>
+      <h4>234₈ = 156₁₀</h4>
+      <ol><li>Stellenwerte sind die Achterpotenzen: 1, 8, 64, 512.</li><li>Ziffer × Stellenwert, alles addieren.</li></ol>
+      <div class="rechnung">
+        2 × 8² + 3 × 8¹ + 4 × 8⁰<br>
+        = 2 × 64 + 3 × 8 + 4 × 1<br>
+        = 128 + 24 + 4 = <span class="res">156₁₀</span>
+      </div>
+    </div>
+
+    <div class="recipe">
+      <div class="dir">Hexadezimal → Dezimal</div>
+      <h4>9C₁₆ = 156₁₀</h4>
+      <ol><li>Buchstaben zuerst in Zahlen umschreiben: C = 12.</li><li>Stellenwerte sind die 16er-Potenzen: 1, 16, 256, 4096.</li></ol>
+      <div class="rechnung">
+        9 × 16¹ + C × 16⁰<br>
+        = 9 × 16 + 12 × 1<br>
+        = 144 + 12 = <span class="res">156₁₀</span>
+      </div>
+    </div>
+
+    <div class="methodhead">
+      <span class="mno">Methode 3</span>
+      <h3>Gruppieren</h3>
+      <span class="when">zwischen Binär, Oktal und Hex</span>
+    </div>
+    <p>Hier wird nicht gerechnet, sondern nur umgepackt. Das geht, weil 8 = 2³ und 16 = 2⁴ ist: <b>eine Oktalziffer sind immer genau 3 Bit, eine Hexziffer immer genau 4 Bit</b>. Gruppen bildest du <b>immer von rechts</b>, weil rechts der Einer steht — links füllst du fehlende Stellen mit Nullen auf.</p>
+
+    <div class="recipe">
+      <div class="dir">Binär → Oktal</div>
+      <h4>10011100₂ = 234₈</h4>
+      <ol><li>Von rechts in 3er-Gruppen aufteilen.</li><li>Links mit Nullen auffüllen, bis die Gruppe voll ist.</li><li>Jede Gruppe einzeln in eine Ziffer 0–7 umrechnen.</li></ol>
+      <div class="rechnung">
+        10011100 &nbsp;<span class="arrow">→</span>&nbsp; <b>010</b> <b>011</b> <b>100</b> &nbsp;<span class="hint">(links eine 0 ergänzt)</span><br>
+        010 = 2 &nbsp;·&nbsp; 011 = 3 &nbsp;·&nbsp; 100 = 4<br>
+        = <span class="res">234₈</span>
+      </div>
+    </div>
+
+    <div class="recipe">
+      <div class="dir">Binär → Hexadezimal</div>
+      <h4>10011100₂ = 9C₁₆</h4>
+      <ol><li>Von rechts in 4er-Gruppen aufteilen.</li><li>Jede Gruppe in eine Ziffer 0–F umrechnen (Stellenwerte innerhalb der Gruppe: 8, 4, 2, 1).</li></ol>
+      <div class="rechnung">
+        10011100 &nbsp;<span class="arrow">→</span>&nbsp; <b>1001</b> <b>1100</b><br>
+        1001 = 8+1 = 9 &nbsp;·&nbsp; 1100 = 8+4 = 12 <span class="hint">→ C</span><br>
+        = <span class="res">9C₁₆</span>
+      </div>
+    </div>
+
+    <div class="recipe">
+      <div class="dir">Oktal → Binär</div>
+      <h4>234₈ = 10011100₂</h4>
+      <ol><li>Jede Oktalziffer einzeln als <b>3 Bit</b> schreiben — auch die kleinen, mit führenden Nullen.</li><li>Alles aneinanderhängen, führende Nullen ganz links weglassen.</li></ol>
+      <div class="rechnung">
+        2 → 010 &nbsp;·&nbsp; 3 → 011 &nbsp;·&nbsp; 4 → 100<br>
+        010 011 100 &nbsp;<span class="arrow">→</span>&nbsp; <span class="res">10011100₂</span>
+      </div>
+    </div>
+
+    <div class="recipe">
+      <div class="dir">Hexadezimal → Binär</div>
+      <h4>9C₁₆ = 10011100₂</h4>
+      <ol><li>Jede Hexziffer einzeln als <b>4 Bit</b> schreiben.</li><li>Aneinanderhängen.</li></ol>
+      <div class="rechnung">
+        9 → 1001 &nbsp;·&nbsp; C (=12) → 1100<br>
+        1001 1100 &nbsp;<span class="arrow">→</span>&nbsp; <span class="res">10011100₂</span>
+      </div>
+    </div>
+
+    <div class="methodhead">
+      <span class="mno">Kombination</span>
+      <h3>Umweg über Binär</h3>
+      <span class="when">Oktal ↔ Hexadezimal</span>
+    </div>
+    <p>Zwischen Oktal und Hex gibt es keinen direkten Weg — 3er- und 4er-Gruppen passen nicht ineinander. Also erst in Bits auflösen, dann neu gruppieren. Über Dezimal ginge es auch, ist aber deutlich mehr Arbeit.</p>
+
+    <div class="recipe">
+      <div class="dir">Oktal → Hexadezimal</div>
+      <h4>234₈ = 9C₁₆</h4>
+      <ol><li>Jede Oktalziffer in 3 Bit auflösen.</li><li>Bits neu von rechts in 4er-Gruppen bündeln.</li><li>Jede Gruppe als Hexziffer schreiben.</li></ol>
+      <div class="rechnung">
+        234₈ &nbsp;<span class="arrow">→</span>&nbsp; 010 011 100 &nbsp;<span class="hint">(3er)</span><br>
+        = 10011100 &nbsp;<span class="arrow">→</span>&nbsp; 1001 1100 &nbsp;<span class="hint">(neu in 4er)</span><br>
+        = 9 · C = <span class="res">9C₁₆</span>
+      </div>
+    </div>
+
+    <div class="recipe">
+      <div class="dir">Hexadezimal → Oktal</div>
+      <h4>9C₁₆ = 234₈</h4>
+      <ol><li>Jede Hexziffer in 4 Bit auflösen.</li><li>Bits neu von rechts in 3er-Gruppen bündeln, links mit Nullen auffüllen.</li><li>Jede Gruppe als Oktalziffer schreiben.</li></ol>
+      <div class="rechnung">
+        9C₁₆ &nbsp;<span class="arrow">→</span>&nbsp; 1001 1100 &nbsp;<span class="hint">(4er)</span><br>
+        = 10011100 &nbsp;<span class="arrow">→</span>&nbsp; 010 011 100 &nbsp;<span class="hint">(neu in 3er)</span><br>
+        = 2 · 3 · 4 = <span class="res">234₈</span>
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="ct">Typische Fehler in der Lernkontrolle</div>
+      <b>Reste in der falschen Reihenfolge</b> — Division mit Rest wird <i>von unten nach oben</i> gelesen.<br>
+      <b>Gruppen von links gebildet</b> — immer von rechts anfangen, sonst verschiebt sich alles.<br>
+      <b>Führende Nullen weggelassen</b> — beim Auflösen von Oktal/Hex muss jede Ziffer volle 3 bzw. 4 Bit ergeben, auch die 1 (= 001 bzw. 0001).<br>
+      <b>Buchstaben vergessen</b> — bei Hex ist der Rest 13 die Ziffer D, nicht «13».<br>
+      <b>Keine Probe gemacht</b> — Ergebnis kurz zurück nach Dezimal rechnen, das kostet 20 Sekunden und rettet Punkte.
+    </div>
+
+    <h2 class="chaptitle" id="uebungstabelle" style="margin-top:44px">Übungstabelle mit Rechnungsweg</h2>
+    <p class="chap-sub">Fünf Startwerte, jeweils in alle anderen Systeme umgerechnet — so aufgeschrieben, wie es die Lehrperson sehen will.</p>
+
+    <div class="wrapscroll"><table class="solved">
+      <tr><th>Dezimal</th><th>Binär</th><th>Oktal</th><th>Hexadezimal</th></tr>
+      <tr><td class="start">45</td><td>101101</td><td>55</td><td>2D</td></tr>
+      <tr><td class="start">255</td><td>11111111</td><td>377</td><td>FF</td></tr>
+      <tr><td>107</td><td class="start">1101011</td><td>153</td><td>6B</td></tr>
+      <tr><td>327</td><td>101000111</td><td class="start">507</td><td>147</td></tr>
+      <tr><td>761</td><td>1011111001</td><td>1371</td><td class="start">2F9</td></tr>
+    </table></div>
+    <p class="footnote">Rot markiert ist jeweils der gegebene Startwert.</p>
+
+    <div class="recipe">
+      <div class="dir">Zeile 1 · gegeben: 45₁₀</div>
+      <div class="rechnung">
+        <b>→ Binär</b> (Division durch 2)<br>
+        45:2=22 R<b>1</b> · 22:2=11 R<b>0</b> · 11:2=5 R<b>1</b> · 5:2=2 R<b>1</b> · 2:2=1 R<b>0</b> · 1:2=0 R<b>1</b><br>
+        von unten gelesen = <span class="res">101101₂</span> &nbsp;<span class="hint">Probe: 32+8+4+1 = 45 ✓</span><br><br>
+        <b>→ Oktal</b> (3er-Gruppen aus dem Binärwert)<br>
+        101101 → 101 101 → 5 · 5 = <span class="res">55₈</span> &nbsp;<span class="hint">Probe: 5×8+5 = 45 ✓</span><br><br>
+        <b>→ Hex</b> (4er-Gruppen)<br>
+        101101 → 0010 1101 → 2 · 13 = <span class="res">2D₁₆</span> &nbsp;<span class="hint">Probe: 2×16+13 = 45 ✓</span>
+      </div>
+    </div>
+
+    <div class="recipe">
+      <div class="dir">Zeile 2 · gegeben: 255₁₀</div>
+      <div class="rechnung">
+        <b>→ Binär</b><br>
+        255:2=127 R<b>1</b> · 127:2=63 R<b>1</b> · 63:2=31 R<b>1</b> · 31:2=15 R<b>1</b> · 15:2=7 R<b>1</b> · 7:2=3 R<b>1</b> · 3:2=1 R<b>1</b> · 1:2=0 R<b>1</b><br>
+        = <span class="res">11111111₂</span> &nbsp;<span class="hint">der grösste Wert, der in 1 Byte passt</span><br><br>
+        <b>→ Oktal</b><br>
+        11111111 → 011 111 111 → 3 · 7 · 7 = <span class="res">377₈</span> &nbsp;<span class="hint">Probe: 3×64+7×8+7 = 192+56+7 = 255 ✓</span><br><br>
+        <b>→ Hex</b><br>
+        11111111 → 1111 1111 → 15 · 15 = <span class="res">FF₁₆</span> &nbsp;<span class="hint">Probe: 15×16+15 = 255 ✓</span>
+      </div>
+    </div>
+
+    <div class="recipe">
+      <div class="dir">Zeile 3 · gegeben: 1101011₂</div>
+      <div class="rechnung">
+        <b>→ Dezimal</b> (Stellenwertsumme)<br>
+        <span class="hint">64 32 16 8 4 2 1</span><br>
+        &nbsp;1&nbsp;&nbsp;1&nbsp;&nbsp;0&nbsp;1&nbsp;0&nbsp;1&nbsp;1 → 64 + 32 + 8 + 2 + 1 = <span class="res">107₁₀</span><br><br>
+        <b>→ Oktal</b> (3er-Gruppen)<br>
+        1101011 → 001 101 011 → 1 · 5 · 3 = <span class="res">153₈</span><br><br>
+        <b>→ Hex</b> (4er-Gruppen)<br>
+        1101011 → 0110 1011 → 6 · 11 = <span class="res">6B₁₆</span> &nbsp;<span class="hint">Probe: 6×16+11 = 107 ✓</span>
+      </div>
+    </div>
+
+    <div class="recipe">
+      <div class="dir">Zeile 4 · gegeben: 507₈</div>
+      <div class="rechnung">
+        <b>→ Binär</b> (jede Ziffer als 3 Bit)<br>
+        5 → 101 · 0 → 000 · 7 → 111 &nbsp;=&nbsp; <span class="res">101000111₂</span><br><br>
+        <b>→ Dezimal</b><br>
+        5 × 8² + 0 × 8¹ + 7 × 8⁰ = 5×64 + 0 + 7 = <span class="res">327₁₀</span><br><br>
+        <b>→ Hex</b> (Binärwert neu in 4er-Gruppen)<br>
+        101000111 → 0001 0100 0111 → 1 · 4 · 7 = <span class="res">147₁₆</span> &nbsp;<span class="hint">Probe: 1×256 + 4×16 + 7 = 327 ✓</span>
+      </div>
+    </div>
+
+    <div class="recipe">
+      <div class="dir">Zeile 5 · gegeben: 2F9₁₆</div>
+      <div class="rechnung">
+        <b>→ Binär</b> (jede Ziffer als 4 Bit)<br>
+        2 → 0010 · F (=15) → 1111 · 9 → 1001 &nbsp;=&nbsp; <span class="res">1011111001₂</span><br><br>
+        <b>→ Dezimal</b><br>
+        2 × 16² + 15 × 16¹ + 9 × 16⁰ = 512 + 240 + 9 = <span class="res">761₁₀</span><br><br>
+        <b>→ Oktal</b> (Binärwert neu in 3er-Gruppen)<br>
+        1011111001 → 001 011 111 001 → 1 · 3 · 7 · 1 = <span class="res">1371₈</span> &nbsp;<span class="hint">Probe: 1×512 + 3×64 + 7×8 + 1 = 761 ✓</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="chapter" id="referenz">
+    <div class="divider"><span class="num">06</span><span class="label">Nachschlagen</span><span class="line"></span></div>
+    <h2 class="chaptitle">Referenztabelle 0–15</h2>
+    <p class="chap-sub">Diese sechzehn Werte lohnt es sich auswendig zu kennen — sie sind der Baustein für jede grössere Umrechnung von Hand.</p>
+    <table class="reftable">
+      <thead><tr><th>Dezimal</th><th>Binär (4 Bit)</th><th>Oktal</th><th>Hexadezimal</th></tr></thead>
+      <tbody id="reftable-body"></tbody>
+    </table>
+  </section>
+
+  <!-- ZWEIERKOMPLEMENT -->
+  <section class="chapter" id="zweierkomplement">
+    <div class="divider"><span class="num">07</span><span class="label">Basis 2 mit Vorzeichen</span><span class="line"></span></div>
+    <h2 class="chaptitle">Negative Zahlen im Computer</h2>
+    <p class="chap-sub">Alle Stellenwerte, die wir bisher gesehen haben — 1, 2, 4, 8, 16 … — sind positiv. Ein Computer muss aber auch negative Zahlen speichern können, und zwar nur mit den Bits 0 und 1, ohne eigenes Minuszeichen. Bevor wir das lösen, kurz zur Addition von Binärzahlen — die brauchen wir gleich.</p>
+
+    <div class="methodhead">
+      <span class="mno">Grundlage</span>
+      <h3>Addition von Binärzahlen</h3>
+      <span class="when">stellenweise, mit Übertrag</span>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <ul class="facts">
+          <li><span style="font-family:var(--font-mono)">0 + 0 = 0</span></li>
+          <li><span style="font-family:var(--font-mono)">1 + 0 = 1</span></li>
+          <li><span style="font-family:var(--font-mono)">1 + 1 = 0</span>, Übertrag <b>1</b> in die nächste Spalte</li>
+          <li><span style="font-family:var(--font-mono)">1 + 1 + 1 = 1</span>, Übertrag <b>1</b> in die nächste Spalte</li>
+        </ul>
+      </div>
+      <div class="worked">
+        <div class="wt">Beispiel: 0110 + 0101</div>
+        <div class="expr">
+          &nbsp;&nbsp;0110<br>
+          + 0101<br>
+          -----------<br>
+          = <span style="color:var(--carry); font-weight:600;">1011</span> &nbsp;<span style="color:var(--ink-soft); font-family:var(--font-mono); font-size:12.5px;">(6 + 5 = 11)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <div class="ct">Was passiert bei einem Überlauf?</div>
+      Ein 8-Bit-Prozessor kann nur mit 8 Bits gleichzeitig rechnen. Wird die Summe zweier Zahlen grösser als 255, entsteht bei der vordersten Stelle ein Übertrag, für den es keine weitere Stelle mehr gibt — er wird einfach gestrichen. Das Ergebnis ist dann mathematisch die richtige Summe <b>modulo 256</b>, also die letzten 8 Bits davon. Wie eine Uhr mit 256 Stunden: nach 255 kommt wieder 0.
+      <div style="margin-top:10px; font-family:var(--font-mono); font-size:13px; color:var(--ink-soft);">
+        260 % 256 = 4 &nbsp;·&nbsp; 512 % 256 = 0 &nbsp;·&nbsp; 300 % 256 = 44
+      </div>
+    </div>
+
+    <p style="font-size:.95rem; color:var(--ink-soft);">Einen solchen Überlauf hält sich der Prozessor intern in einem <b>Überlauf-Bit</b> fest. Bei Zweierkomplement-Zahlen tritt er vor allem dann auf, wenn die Addition zweier Zahlen mit gleichem Vorzeichen ein Ergebnis mit anderem Vorzeichen liefert — je nach Prozessor und Programmiersprache kann das einen Laufzeitfehler auslösen.</p>
+
+    <div class="task pflicht" data-task="binaeraddition-uebung">
+      <button class="task-check" aria-pressed="false" type="button"><span class="mark">✓</span></button>
+      <div class="task-body">
+        <div class="task-tag">Pflichtaufgabe</div>
+        <p>Berechnen Sie das Ergebnis der folgenden Additionen (gehen Sie dabei von einem 8-Bit-System aus):</p>
+        <ul>
+          <li>1001 1001 + 0011 0101</li>
+          <li>1111 1111 + 0000 0001</li>
+        </ul>
+
+        <details class="loesung" open>
+          <summary>Musterlösung</summary>
+          <div class="loesung-body">
+<div class="recipe">
+  <div class="dir">1001 1001 + 0011 0101</div>
+  <div class="rechnung">
+    &nbsp;&nbsp;1001 1001<br>
+    + 0011 0101<br>
+    -----------------<br>
+    = <span class="res">1100 1110</span> &nbsp;<span class="hint">153 + 53 = 206, passt locker in 8 Bit — kein Überlauf</span>
+  </div>
+</div>
+<div class="recipe">
+  <div class="dir">1111 1111 + 0000 0001</div>
+  <div class="rechnung">
+    &nbsp;&nbsp;1111 1111<br>
+    + 0000 0001<br>
+    -----------------<br>
+    = <span class="res">0000 0000</span> &nbsp;<span class="hint">255 + 1 = 256 — das passt nicht mehr in 8 Bit. Der letzte Übertrag fällt weg, übrig bleibt 256 % 256 = 0. Klassischer Überlauf.</span>
+  </div>
+</div></div>
+        </details>
+      </div>
+    </div>
+
+    <div class="methodhead">
+      <span class="mno">Versuch 1</span>
+      <h3>Einerkomplement</h3>
+      <span class="when">das Negative durch Invertieren bilden</span>
+    </div>
+    <p>Die erste Idee: Um eine negative Zahl darzustellen, kehrt man einfach jedes Bit der positiven Zahl um — aus 0 wird 1 und umgekehrt. Aus <span style="font-family:var(--font-mono)">0000 0101</span> (5) wird so <span style="font-family:var(--font-mono)">1111 1010</span> (dargestellt als −5). Einfach umzusetzen, aber nicht ohne Nachteile.</p>
+
+    <div class="task pflicht" data-task="einerkomplement-nachteil">
+      <button class="task-check" aria-pressed="false" type="button"><span class="mark">✓</span></button>
+      <div class="task-body">
+        <div class="task-tag">Pflichtaufgabe</div>
+        <p>Schauen Sie sich ein Video zum Thema Einerkomplement an. Beantworten Sie danach die Frage: Was ist der Nachteil des Einerkomplements?</p>
+
+        <details class="loesung" open>
+          <summary>Musterlösung</summary>
+          <div class="loesung-body">
+<ul>
+  <li><b>Zwei Darstellungen der Null:</b> <span class="mono">0000 0000</span> ist +0, <span class="mono">1111 1111</span> ist −0. Rechnerisch dieselbe Zahl, aber zwei verschiedene Bitmuster — das verschwendet einen Wert und macht Vergleiche umständlicher.</li>
+  <li><b>Addition braucht einen Extraschritt:</b> Entsteht beim Addieren ein Übertrag über die letzte Stelle hinaus, muss dieser als «End-Around-Carry» wieder vorne addiert werden, damit das Ergebnis stimmt. Das macht die Schaltung im Prozessor komplizierter.</li>
+</ul>
+<p>Genau diese zwei Probleme löst das Zweierkomplement — deshalb hat es sich durchgesetzt.</p></div>
+        </details>
+      </div>
+    </div>
+
+    <div class="methodhead">
+      <span class="mno">Versuch 2</span>
+      <h3>Zweierkomplement</h3>
+      <span class="when">Standard in praktisch jedem Prozessor</span>
+    </div>
+    <p>Das Zweierkomplement löst beide Probleme des Einerkomplements: invertieren <b>und danach 1 addieren</b>. Es gibt nur noch eine Null, und normale Addition funktioniert ohne Zusatzschritt. Mit einem Byte (8 Bit) lassen sich damit die Werte <b>−128 bis 127</b> darstellen — eine Zahl mehr auf der negativen Seite, weil die Null keinen doppelten Platz mehr braucht. Mit 16 Bit reicht der Bereich von −32'768 bis 32'767.</p>
+
+    <div class="worked">
+      <div class="wt">Ohne zu rechnen: der Schnelltrick für −76</div>
+      <p style="margin:0 0 14px; font-size:14.5px; color:var(--ink-soft);">Von rechts nach links durch die positive Binärzahl gehen: Nullen unverändert übernehmen, die erste 1 unverändert übernehmen, alles davor invertieren.</p>
+      <div class="groupdiagram">
+        <div class="gbits"><span class="g1">01001</span><span class="g2">100</span></div>
+        <div class="garrow">invertieren ↓ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; übernehmen ↓</div>
+        <div class="gresult"><span class="g1">10110</span><span class="g2">100</span></div>
+      </div>
+      <p style="margin:14px 0 0; font-family:var(--font-mono); font-size:13.5px;">76 = <span style="color:var(--ink-soft)">0100 1100</span> &nbsp;→&nbsp; −76 = <span style="color:var(--carry); font-weight:600;">1011 0100₂</span></p>
+      <p style="margin:8px 0 0; font-size:13.5px; color:var(--ink-soft);">Der Trick funktioniert in beide Richtungen — auch um aus einer negativen Binärzahl wieder die positive zu gewinnen.</p>
+    </div>
+
+    <div class="task pflicht" data-task="negative-binaer-schreiben">
+      <button class="task-check" aria-pressed="false" type="button"><span class="mark">✓</span></button>
+      <div class="task-body">
+        <div class="task-tag">Pflichtaufgabe</div>
+        <p>Schreiben Sie die folgenden Dezimalzahlen als Binärzahlen auf:</p>
+        <ul>
+          <li>−83 (8 Bit)</li>
+          <li>−24 000 (16 Bit)</li>
+        </ul>
+
+        <details class="loesung" open>
+          <summary>Musterlösung</summary>
+          <div class="loesung-body">
+<div class="recipe">
+  <div class="dir">−83, 8 Bit</div>
+  <div class="rechnung">
+    83 = <span class="hint">0101 0011</span><br>
+    invertieren = 1010 1100<br>
+    + 1<br>
+    = <span class="res">1010 1101₂</span> &nbsp;<span class="hint">Probe: 128+32+8+4+1 = 173, 173−256 = −83 ✓</span>
+  </div>
+</div>
+<div class="recipe">
+  <div class="dir">−24 000, 16 Bit</div>
+  <div class="rechnung">
+    24 000 = <span class="hint">0101 1101 1100 0000</span><br>
+    invertieren = 1010 0010 0011 1111<br>
+    + 1<br>
+    = <span class="res">1010 0010 0100 0000₂</span> &nbsp;<span class="hint">Probe: 32768+8192+512+64 = 41536, 41536−65536 = −24000 ✓</span>
+  </div>
+</div></div>
+        </details>
+      </div>
+    </div>
+
+    <div class="methodhead">
+      <span class="mno">Anwendung</span>
+      <h3>Subtraktion von Binärzahlen</h3>
+      <span class="when">Subtraktion = Addition der negativen Zahl</span>
+    </div>
+    <p>Aus der Schule bekannt: 22 − 9 lässt sich auch als 22 + (−9) schreiben, das Ergebnis ist gleich. Weil wir jetzt wissen, wie negative Binärzahlen aussehen, wird aus jeder Subtraktion einfach eine ganz normale Addition.</p>
+
+    <div class="recipe">
+      <div class="dir">22 − 9 &nbsp;=&nbsp; 22 + (−9)</div>
+      <div class="rechnung">
+        22 = 0001 0110 &nbsp;·&nbsp; −9 = 1111 0111<br>
+        &nbsp;&nbsp;0001 0110<br>
+        + 1111 0111<br>
+        -----------------<br>
+        = <span class="res">0000 1101</span> &nbsp;<span class="hint">= 13 ✓ (der Übertrag über die letzte Stelle hinaus wird verworfen)</span>
+      </div>
+    </div>
+
+    <div class="recipe">
+      <div class="dir">22 − 25 &nbsp;=&nbsp; 22 + (−25)</div>
+      <div class="rechnung">
+        22 = 0001 0110 &nbsp;·&nbsp; −25 = 1110 0111<br>
+        &nbsp;&nbsp;0001 0110<br>
+        + 1110 0111<br>
+        -----------------<br>
+        = <span class="res">1111 1101</span> &nbsp;<span class="hint">vorderste Stelle ist 1 → Ergebnis negativ. Zurückgerechnet ergibt das −3 ✓</span>
+      </div>
+    </div>
+
+    <div class="task pflicht" data-task="binaersubtraktion-uebung">
+      <button class="task-check" aria-pressed="false" type="button"><span class="mark">✓</span></button>
+      <div class="task-body">
+        <div class="task-tag">Pflichtaufgabe</div>
+        <p>Führen Sie die folgenden Subtraktionen mit den entsprechenden Binärzahlen durch (gehen Sie dabei von einem 8-Bit-System aus):</p>
+        <ul>
+          <li>56 − 78</li>
+          <li>109 − 42</li>
+        </ul>
+
+        <details class="loesung" open>
+          <summary>Musterlösung</summary>
+          <div class="loesung-body">
+<div class="recipe">
+  <div class="dir">56 − 78 = 56 + (−78)</div>
+  <div class="rechnung">
+    56 = 0011 1000 &nbsp;·&nbsp; −78 = 1011 0010<br>
+    &nbsp;&nbsp;0011 1000<br>
+    + 1011 0010<br>
+    -----------------<br>
+    = <span class="res">1110 1010</span> &nbsp;<span class="hint">vorderste Stelle 1 → negativ. Probe: 234−256 = −22 ✓</span>
+  </div>
+</div>
+<div class="recipe">
+  <div class="dir">109 − 42 = 109 + (−42)</div>
+  <div class="rechnung">
+    109 = 0110 1101 &nbsp;·&nbsp; −42 = 1101 0110<br>
+    &nbsp;&nbsp;0110 1101<br>
+    + 1101 0110<br>
+    -----------------<br>
+    = <span class="res">0100 0011</span> &nbsp;<span class="hint">vorderste Stelle 0 → positiv. = 67 ✓</span>
+  </div>
+</div></div>
+        </details>
+      </div>
+    </div>
+
+    <p class="footnote">Weiterführend: <a href="http://www.ulthryvasse.de/addition-von-binaeren-zahlen.html" target="_blank" rel="noopener">Addition von binären Zahlen</a> · <a href="http://www.ulthryvasse.de/subtraktion-von-binaeren-zahlen.html" target="_blank" rel="noopener">Subtraktion von binären Zahlen</a></p>
+  </section>
+
+  <!-- LOGISCHE OPERATOREN -->
+  <section class="chapter" id="logik">
+    <div class="divider"><span class="num">08</span><span class="label">Logische Operatoren</span><span class="line"></span></div>
+    <h2 class="chaptitle">UND, ODER, NICHT</h2>
+    <p class="chap-sub">Logische Operatoren fassen binäre Signale zusammen oder verändern sie. Sie liefern immer einen Wahrheitswert — wahr oder falsch, 1 oder 0. Die drei wichtigsten, in der Programmierung am häufigsten verwendeten Operatoren: AND, OR und NOT.</p>
+
+    <div class="methodhead">
+      <span class="mno">Operator</span>
+      <h3>AND</h3>
+      <span class="when">Schreibweise: A ∧ B</span>
+    </div>
+    <div class="grid-2">
+      <div>
+        <p>AND fasst zwei binäre Signale zu einem zusammen. Der Wahrheitswert ist nur dann wahr, wenn <b>beide</b> Eingangssignale wahr sind.</p>
+        <table class="reftable" style="max-width:230px;">
+          <thead><tr><th>A</th><th>B</th><th>A ∧ B</th></tr></thead>
+          <tbody>
+            <tr><td>0</td><td>0</td><td>0</td></tr>
+            <tr><td>0</td><td>1</td><td>0</td></tr>
+            <tr><td>1</td><td>0</td><td>0</td></tr>
+            <tr><td>1</td><td>1</td><td style="color:var(--carry); font-weight:600;">1</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="worked">
+        <div class="wt">Gatter-Symbol</div>
+        <svg viewBox="0 0 90 50" style="width:100%; max-width:190px; display:block; margin:4px auto 0;">
+          <g fill="none" stroke="#21262B" stroke-width="2.5" stroke-linecap="round">
+            <line x1="4" y1="14" x2="20" y2="14"/>
+            <line x1="4" y1="36" x2="20" y2="36"/>
+            <path d="M20,4 L46,4 A21,21 0 0 1 46,46 L20,46 Z"/>
+            <line x1="67" y1="25" x2="86" y2="25"/>
+          </g>
+          <text x="2" y="11" font-family="IBM Plex Mono, monospace" font-size="8" fill="#5B5D53">A</text>
+          <text x="2" y="33" font-family="IBM Plex Mono, monospace" font-size="8" fill="#5B5D53">B</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="methodhead">
+      <span class="mno">Operator</span>
+      <h3>OR</h3>
+      <span class="when">Schreibweise: A ∨ B — das Zeichen ist nicht der Buchstabe v, sondern der logische OR-Operator</span>
+    </div>
+    <div class="grid-2">
+      <div>
+        <p>OR fasst ebenfalls zwei binäre Signale zusammen. Der Wahrheitswert ist wahr, sobald <b>mindestens eines</b> der beiden Eingangssignale wahr ist.</p>
+        <table class="reftable" style="max-width:230px;">
+          <thead><tr><th>A</th><th>B</th><th>A ∨ B</th></tr></thead>
+          <tbody>
+            <tr><td>0</td><td>0</td><td>0</td></tr>
+            <tr><td>0</td><td>1</td><td style="color:var(--carry); font-weight:600;">1</td></tr>
+            <tr><td>1</td><td>0</td><td style="color:var(--carry); font-weight:600;">1</td></tr>
+            <tr><td>1</td><td>1</td><td style="color:var(--carry); font-weight:600;">1</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="worked">
+        <div class="wt">Gatter-Symbol</div>
+        <svg viewBox="0 0 90 50" style="width:100%; max-width:190px; display:block; margin:4px auto 0;">
+          <g fill="none" stroke="#21262B" stroke-width="2.5" stroke-linecap="round">
+            <line x1="4" y1="14" x2="22" y2="14"/>
+            <line x1="4" y1="36" x2="22" y2="36"/>
+            <path d="M20,4 Q34,25 20,46 Q54,46 67,25 Q54,4 20,4 Z"/>
+            <line x1="67" y1="25" x2="86" y2="25"/>
+          </g>
+          <text x="2" y="11" font-family="IBM Plex Mono, monospace" font-size="8" fill="#5B5D53">A</text>
+          <text x="2" y="33" font-family="IBM Plex Mono, monospace" font-size="8" fill="#5B5D53">B</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="methodhead">
+      <span class="mno">Operator</span>
+      <h3>NOT</h3>
+      <span class="when">Schreibweise: ¬A</span>
+    </div>
+    <div class="grid-2">
+      <div>
+        <p>NOT verändert das Eingangssignal ins Gegenteil. Ist das Eingangssignal wahr, ist der Wahrheitswert falsch — und umgekehrt.</p>
+        <table class="reftable" style="max-width:160px;">
+          <thead><tr><th>A</th><th>¬A</th></tr></thead>
+          <tbody>
+            <tr><td>0</td><td style="color:var(--carry); font-weight:600;">1</td></tr>
+            <tr><td>1</td><td>0</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="worked">
+        <div class="wt">Gatter-Symbol</div>
+        <svg viewBox="0 0 90 50" style="width:100%; max-width:190px; display:block; margin:4px auto 0;">
+          <g fill="none" stroke="#21262B" stroke-width="2.5" stroke-linecap="round">
+            <line x1="4" y1="25" x2="20" y2="25"/>
+            <path d="M20,4 L20,46 L58,25 Z"/>
+            <circle cx="63" cy="25" r="5"/>
+            <line x1="68" y1="25" x2="86" y2="25"/>
+          </g>
+          <text x="2" y="22" font-family="IBM Plex Mono, monospace" font-size="8" fill="#5B5D53">A</text>
+        </svg>
+      </div>
+    </div>
+
+    <p class="footnote" style="border-top:none; padding-top:0; margin-top:-8px;">Quelle für Wahrheitstabellen und Gattersymbole: <a href="https://aristoteles2pc.wordpress.com/2011/03/23/las-funciones-logicas-and-or-y-not/" target="_blank" rel="noopener">aristoteles2pc.wordpress.com</a></p>
+
+    <div class="methodhead">
+      <span class="mno">Reihenfolge</span>
+      <h3>Rangfolge der Operatoren</h3>
+      <span class="when">Klammern → NOT → AND → OR</span>
+    </div>
+    <p>Genau wie bei Zahlen die Regel «Punkt vor Strich» gilt — bei <span style="font-family:var(--font-mono)">5 + 7 × 9</span> wird zuerst multipliziert, das korrekte Ergebnis ist 68 und nicht 108 — gibt es auch bei logischen Operatoren eine feste Reihenfolge. Zuerst werden Klammern aufgelöst. Sind keine mehr vorhanden, gilt:</p>
+
+    <div class="methodgrid">
+      <div class="methodcard"><div class="mn">Zuerst</div><h3>NOT</h3><p>Negationen werden vor allem anderen ausgewertet.</p></div>
+      <div class="methodcard"><div class="mn">Danach</div><h3>AND</h3><p>Undverknüpfungen werden vor Oderverknüpfungen ausgewertet.</p></div>
+      <div class="methodcard"><div class="mn">Zuletzt</div><h3>OR</h3><p>Oderverknüpfungen werden als Letztes berechnet.</p></div>
+    </div>
+
+    <div class="worked">
+      <div class="wt">Beispiel: A ∨ (B ∨ C ∧ ¬D), mit A=0, B=0, C=1, D=0</div>
+      <div class="expr">
+        ¬D = ¬0 = 1<br>
+        C ∧ ¬D = 1 ∧ 1 = 1<br>
+        B ∨ (C ∧ ¬D) = 0 ∨ 1 = 1<br>
+        A ∨ (B ∨ C ∧ ¬D) = 0 ∨ 1 = <span style="color:var(--carry); font-weight:600;">1 (wahr)</span>
+      </div>
+    </div>
+
+    <div class="task pflicht" data-task="logik-ausdruecke">
+      <button class="task-check" aria-pressed="false" type="button"><span class="mark">✓</span></button>
+      <div class="task-body">
+        <div class="task-tag">Pflichtaufgabe</div>
+        <p>Bestimmen Sie den Wahrheitswert der folgenden Ausdrücke:</p>
+        <ul>
+          <li>A ∨ B ∨ C ∧ D, mit A=1, B=1, C=1, D=0</li>
+          <li>¬A ∧ B ∨ C, mit A=0, B=1, C=0</li>
+          <li>A ∧ ¬(B ∨ C), mit A=1, B=1, C=0</li>
+        </ul>
+
+        <details class="loesung" open>
+          <summary>Musterlösung</summary>
+          <div class="loesung-body">
+<div class="recipe">
+  <div class="dir">A ∨ B ∨ C ∧ D, mit A=1, B=1, C=1, D=0</div>
+  <div class="rechnung">
+    zuerst AND: C ∧ D = 1 ∧ 0 = 0<br>
+    dann OR: A ∨ B ∨ 0 = 1 ∨ 1 ∨ 0<br>
+    = <span class="res">1 (wahr)</span>
+  </div>
+</div>
+<div class="recipe">
+  <div class="dir">¬A ∧ B ∨ C, mit A=0, B=1, C=0</div>
+  <div class="rechnung">
+    zuerst NOT: ¬A = ¬0 = 1<br>
+    dann AND: ¬A ∧ B = 1 ∧ 1 = 1<br>
+    dann OR: 1 ∨ C = 1 ∨ 0<br>
+    = <span class="res">1 (wahr)</span>
+  </div>
+</div>
+<div class="recipe">
+  <div class="dir">A ∧ ¬(B ∨ C), mit A=1, B=1, C=0</div>
+  <div class="rechnung">
+    zuerst Klammer: B ∨ C = 1 ∨ 0 = 1<br>
+    dann NOT: ¬(B ∨ C) = ¬1 = 0<br>
+    dann AND: A ∧ 0 = 1 ∧ 0<br>
+    = <span class="res">0 (falsch)</span>
+  </div>
+</div></div>
+        </details>
+      </div>
+    </div>
+
+    <div class="task optional" data-task="logik-hardware-video">
+      <button class="task-check" aria-pressed="false" type="button"><span class="mark">✓</span></button>
+      <div class="task-body">
+        <div class="task-tag">Optionale Aufgabe</div>
+        <p>Wer sich für die Anwendung logischer Operatoren in der Hardware interessiert, kann sich dazu englischsprachige Videos anschauen.</p>
+      </div>
+    </div>
+
+    <p class="footnote">Weiterführend: <a href="http://openbook.rheinwerk-verlag.de/it_handbuch/02_001.html#dodtp405c6069-7f32-4631-aa45-de32885cafcb" target="_blank" rel="noopener">Kapitel aus dem IT-Handbuch für Fachinformatiker zum Thema Logik</a> · <a href="https://sites.google.com/bbzbl-it.ch/modul-114-2026-q1-db/grundlagen/bin%C3%A4re-codierung/logische-operatoren/logische-operatoren-musterl%C3%B6sungen?authuser=0" target="_blank" rel="noopener">Offizielle Musterlösungen</a></p>
+  </section>
+
+  <section class="chapter" id="vertiefung">
+    <div class="task vertiefung" data-task="video-stellenwert">
+      <button class="task-check" aria-pressed="false" type="button"><span class="mark">✓</span></button>
+      <div class="task-body">
+        <div class="task-tag">Vertiefende Aufgabe</div>
+        <p>Schauen Sie sich das Video zum Thema Stellenwertsystem an (Hochschulvortrag, ca. 77 Minuten). Nur für alle, die sich wirklich vertieft damit auseinandersetzen möchten.</p>
+      
+        <details class="loesung" open>
+          <summary>Musterlösung</summary>
+          <div class="loesung-body">
+<p>Falls du die 77 Minuten sparen willst — die Kernaussagen des Vortrags:</p>
+<ul>
+  <li>Jedes Stellenwertsystem folgt derselben Formel: <span class="mono">Wert = Σ (Ziffer × Basis^Stelle)</span>, gezählt ab Stelle 0 ganz rechts.</li>
+  <li>Die Basis bestimmt nur, wie viele Ziffern es gibt und wie schnell die Stellenwerte wachsen — sonst ändert sich nichts.</li>
+  <li>Nach dem Komma geht es mit negativen Exponenten weiter: <span class="mono">0.101₂ = 1/2 + 0/4 + 1/8 = 0.625</span>.</li>
+  <li>Nicht jede Dezimalzahl lässt sich binär exakt darstellen — <span class="mono">0.1</span> ist binär periodisch. Genau daher kommt <span class="mono">0.1 + 0.2 = 0.30000000000000004</span> in JavaScript.</li>
+</ul></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <footer class="recap">
+    <div class="divider"><span class="line"></span><span class="label">Kurz zusammengefasst</span><span class="line"></span></div>
+    <ul class="recap-list">
+      <li><span class="dot add"></span><span><b>Additionssystem</b> — Werte addieren, Position egal. <em>(römische Zahlen)</em></span></li>
+      <li><span class="dot pos"></span><span><b>Stellenwertsystem</b> — Position bestimmt den Wert. <em>(Dezimal, Binär, Oktal, Hex)</em></span></li>
+      <li><span class="dot hyb"></span><span><b>Hybridsystem</b> — Ziffern plus Multiplikationsfaktoren. <em>(chinesisches System)</em></span></li>
+    </ul>
+    <div class="lernkontrolle" id="lernkontrolle-note">
+      <b>Alle Aufgaben erledigt.</b>
+      Sie können jetzt bei der Lehrperson eine Lernkontrolle holen.
+    </div>
+    <p class="footnote">Modul 114 © 2026, D. Kopp, D. Brodbeck, BBZ BL</p>
+  </footer>
+</div>
+
+<script>
+  /* ---------- Ledger (decimal place-value tool) ---------- */
+  (function(){
+    var placeNames = ['Einer','Zehner','Hunderter','Tausender','Zehntausender','Hunderttausender'];
+    var input = document.getElementById('num-input');
+    var strip = document.getElementById('ledger-strip');
+    var sumLine = document.getElementById('sum-line');
+    var rollBtn = document.getElementById('roll-btn');
+
+    function render(raw){
+      var n = parseInt(raw.replace(/[^0-9]/g,''), 10);
+      if (isNaN(n)) n = 0;
+      n = Math.min(n, 999999);
+      var digits = String(n).split('');
+      var len = digits.length;
+
+      strip.innerHTML = '';
+      digits.forEach(function(d, i){
+        var posFromRight = len - 1 - i;
+        var weight = Math.pow(10, posFromRight);
+        var col = document.createElement('div');
+        col.className = 'col';
+        col.style.animationDelay = (i * 0.06) + 's';
+        col.innerHTML = '<div class="digit">' + d + '</div><div class="place">' + placeNames[posFromRight] + '</div><div class="weight">×' + weight.toLocaleString('de-DE') + '</div>';
+        strip.appendChild(col);
+      });
+
+      var parts = digits.map(function(d, i){
+        var posFromRight = len - 1 - i;
+        return (parseInt(d,10) * Math.pow(10, posFromRight));
+      }).filter(function(v){ return v > 0; });
+      if (parts.length === 0) parts = [0];
+
+      var termsHtml = parts.map(function(v){ return '<span class="term">' + v.toLocaleString('de-DE') + '</span>'; }).join('<span class="plus">+</span>');
+      sumLine.innerHTML = termsHtml + '<span class="eq">=</span>' + n.toLocaleString('de-DE');
+    }
+
+    input.addEventListener('input', function(){ render(input.value); });
+    rollBtn.addEventListener('click', function(){
+      var n = Math.floor(Math.random() * 900000) + 1;
+      input.value = n;
+      render(String(n));
+    });
+    render(input.value);
+  })();
+
+  /* ---------- Switch console (Umrechnung lab) ---------- */
+  (function(){
+    var POWERS = [128,64,32,16,8,4,2,1];
+    var switchesEl = document.getElementById('switches-lab');
+    var readoutsEl = document.getElementById('readouts-lab');
+    var equationEl = document.getElementById('equation-lab');
+    var bits = [0,0,0,0,0,0,0,0];
+
+    function render(){
+      switchesEl.innerHTML = '';
+      POWERS.forEach(function(p, i){
+        var on = bits[i] === 1;
+        var cell = document.createElement('div');
+        cell.className = 'switchcell' + (on ? ' on' : '');
+        cell.innerHTML = '<span class="pow">' + p + '</span><div class="switch ' + (on?'on':'') + '" data-i="' + i + '"><div class="knob"></div></div><span class="bit">' + (on?1:0) + '</span>';
+        cell.querySelector('.switch').addEventListener('click', function(){
+          bits[i] = bits[i] === 1 ? 0 : 1;
+          render();
+        });
+        switchesEl.appendChild(cell);
+      });
+
+      var dec = bits.reduce(function(sum, b, i){ return sum + b*POWERS[i]; }, 0);
+      var bin = bits.join('');
+      var oct = dec.toString(8);
+      var hex = dec.toString(16).toUpperCase();
+
+      readoutsEl.innerHTML =
+        '<div class="readout"><div class="val">' + dec + '</div><div class="lab">Dezimal</div></div>' +
+        '<div class="readout"><div class="val">' + bin + '</div><div class="lab">Binär</div></div>' +
+        '<div class="readout"><div class="val">' + oct + '</div><div class="lab">Oktal</div></div>' +
+        '<div class="readout"><div class="val">' + hex + '</div><div class="lab">Hex</div></div>';
+
+      var terms = bits.map(function(b,i){ return b + '×' + POWERS[i]; }).join(' + ');
+      equationEl.innerHTML = terms + ' = <span class="hi">' + dec + '</span>';
+    }
+
+    document.querySelector('.console .rst').addEventListener('click', function(){
+      bits = [0,0,0,0,0,0,0,0];
+      render();
+    });
+    render();
+  })();
+
+  /* ---------- Division steps for 317 -> binary ---------- */
+  (function(){
+    var n = 317;
+    var steps = [];
+    while(n > 0){
+      var q = Math.floor(n/2);
+      var r = n % 2;
+      steps.push({n:n, q:q, r:r});
+      n = q;
+    }
+    document.getElementById('divsteps').innerHTML = steps.map(function(s){
+      return '<div class="row"><span>' + s.n + ' ÷ 2</span><span>=</span><span>' + s.q + '</span><span class="rem">Rest ' + s.r + '</span></div>';
+    }).join('');
+  })();
+
+  /* ---------- Reference table 0-15 ---------- */
+  (function(){
+    var body = document.getElementById('reftable-body');
+    var rows = '';
+    for(var i=0;i<16;i++){
+      var bin = i.toString(2).padStart(4,'0');
+      var oct = i.toString(8);
+      var hex = i.toString(16).toUpperCase();
+      rows += '<tr><td class="mono" style="font-family:var(--font-mono)">' + i + '</td><td style="font-family:var(--font-mono)">' + bin + '</td><td style="font-family:var(--font-mono)">' + oct + '</td><td class="hex" style="font-family:var(--font-mono)">' + hex + '</td></tr>';
+    }
+    body.innerHTML = rows;
+  })();
+
+  /* ---------- Task tracker with persistent storage ---------- */
+  (function(){
+    var tasks = Array.prototype.slice.call(document.querySelectorAll('.task'));
+
+    function updateProgress(){
+      var done = document.querySelectorAll('.task.done').length;
+      var total = tasks.length;
+      var badge = document.getElementById('progress-badge');
+      var fill = document.getElementById('progress-fill');
+      var note = document.getElementById('lernkontrolle-note');
+      if (badge) badge.textContent = done + ' / ' + total + ' Aufgaben erledigt';
+      if (fill) fill.style.width = (total ? (done/total*100) : 0) + '%';
+      if (note) note.style.display = (total > 0 && done === total) ? 'block' : 'none';
+    }
+
+    function setDone(task, done){
+      task.classList.toggle('done', done);
+      task.querySelector('.task-check').setAttribute('aria-pressed', done ? 'true' : 'false');
+    }
+
+    async function init(){
+      for (var i=0; i<tasks.length; i++){
+        var task = tasks[i];
+        var id = task.dataset.task;
+        try{
+          var res = await window.storage.get('task:' + id, false);
+          if (res && res.value === 'true') setDone(task, true);
+        }catch(e){ /* no saved state yet, or storage unavailable */ }
+      }
+      updateProgress();
+
+      tasks.forEach(function(task){
+        task.querySelector('.task-check').addEventListener('click', async function(){
+          var nowDone = !task.classList.contains('done');
+          setDone(task, nowDone);
+          updateProgress();
+          try{
+            await window.storage.set('task:' + task.dataset.task, nowDone ? 'true' : 'false', false);
+          }catch(e){ /* storage unavailable; state still works for this session */ }
+        });
+      });
+    }
+
+    if (window.storage){ init(); }
+    else {
+      updateProgress();
+      tasks.forEach(function(task){
+        task.querySelector('.task-check').addEventListener('click', function(){
+          setDone(task, !task.classList.contains('done'));
+          updateProgress();
+        });
+      });
+    }
+  })();
+</script>
+
+</body>
+</html>
